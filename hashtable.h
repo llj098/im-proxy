@@ -30,7 +30,7 @@ void* ht_get(ht_table_t* t,ht_key_t k);
 void ht_remove(ht_table_t* t,ht_key_t k);
 
 
-inline ht_node_cp(ht_node_t *src,ht_node_t *dst)
+inline void ht_node_cp(ht_node_t *src,ht_node_t *dst)
 {
   dst->data = src->data;
 
@@ -54,7 +54,7 @@ inline int ht_init(ht_table_t* t)
 	return -1;
 
   t->len = HT_INIT_SIZE;
-  t->nodes = (ht_node_t*)calloc(sizeof(struct ht_node_s) 
+  t->nodes = (ht_node_t*)calloc(1,sizeof(struct ht_node_s) 
 							 * HT_INIT_SIZE);
   if(!t->nodes)
 	return -1;

@@ -1,16 +1,16 @@
-#include "hashtable.h"
 #include "proxy.h"
 
-//int ht_set(ht_table_t* t,ht_key_t* key,void* val) { return -1; }
-//void* ht_get(ht_table_t* t,ht_key_t* key) { return NULL; }
-//void ht_remove(ht_table_t* t,ht_key_t* key) { }
+int ht_set(ht_table_t* t,ht_key_t k,void* data){return -1;}
+void* ht_get(ht_table_t* t,ht_key_t k){ return NULL; }
+void ht_remove(ht_table_t* t,ht_key_t k){}
+
 
 int 
 ht_resize_tmp(ht_table_t* t)
 {
-  int len,sz,pos,nnlast;
+  int len,pos;
   uint32_t hash;
-  ht_node_t* node,n;
+  ht_node_t *node,*n,*nnlast;
 
   len = t->len;
   len = len << 1;
@@ -20,22 +20,23 @@ ht_resize_tmp(ht_table_t* t)
     return -1;
   }
 
-  sz = sizeof(ht_node_t)*len;
-  ht_node_t* nn = (ht_node_t*)calloc(sz);
+  
+  //ht_node_t* nn = (ht_node_t*)calloc((size_t)len,sizeof(ht_node_t));
+  ht_node_t* nn = (ht_node_t*)pxy_calloc(len*sizeof(ht_node_t));
 
   /*recalcute the hash*/
   for(node=t->nodes;t;t++){
-    if((node != NULL) && (node->key != NULL)){
+    if(node){
 
-      hash = node->key->hash;
+      hash = node->key.hash;
       pos = hash % len;
       
-      ht_node_cp(node,nn[pos]);
+      ht_node_cp(node,&(nn[pos]));
       
       while(node->next){
 	
 	n = node->next;
-	nnlast = (ht_node_t*)calloc(sizeof(ht_node_t));
+	nnlast = (ht_node_t*)calloc(1,sizeof(ht_node_t));
 	ht_node_cp(n,nnlast);
 
 	nnlast = nnlast->next;
@@ -43,4 +44,5 @@ ht_resize_tmp(ht_table_t* t)
       }
     }
   }
+  return 1;
 }

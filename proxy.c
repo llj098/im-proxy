@@ -7,12 +7,27 @@
 #define MAX_EVENTS 1000
 
 int 
+setnonblocking(int sock)
+{
+  int opts;
+  opts = fcntl(sock,F_GETFL);
+  if(opts<0) return -1;
+
+  opts = opts | O_NONBLOCK;
+  if(fcntl(sock,F_SETFL,opts) < 0)
+    return -1;
+
+  return 0;
+}
+
+int 
 start_worker()
 {
   struct epoll_event ev,events[MAX_EVENTS];
   int i,lsock,csock,epollfd,nfds;
 
-  epollfd = epoll_creat(10);
+  lsock = csock = 0;
+  epollfd = epoll_create(10);
   if(epollfd < 0)
     return -1;
 
@@ -73,7 +88,7 @@ spawn_worker()
 
   for(;i<4;i++){
 
-    int p = fork();
+    pid_t p = fork();
 
     if(p < 0) {
 	printf("%s","forkerror");
@@ -94,12 +109,12 @@ int
 create_shm()
 {
   int p = shmget(IPC_PRIVATE,sizeof(4),0600/*user read&writer*/);
-  void* ptr;
+  char* ptr;
   if(p>0) {
     printf("shm created, id %d\n",p);
     ptr = shmat(p,0,0);
     ptr = "123";
-    printf("shmat %lx,%s",ptr,ptr);
+    printf("%s\n",ptr);
   }
   
   return p;
@@ -141,12 +156,14 @@ int start()
 }
 
 int 
-main(char* args,int len)
+main(int len,char** args)
 {
   int s = start();
   char st[2];
-  //printf("%s\n%d","STARTED",s);
-  //scanf("%s",&st);
+  printf("%s\n%d","STARTED",s);
+  scanf("%s",st);
+
+  return 1;
 }
 
 
