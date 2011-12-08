@@ -1,6 +1,27 @@
-#ifndef
+#ifndef _HASHTABLE_H_
+
 #define _HASHTABLE_H_
 #define HT_INIT_SIZE 16
+
+#include "proxy.h"
+
+
+typedef struct ht_key_s{
+  uint32_t hash;
+  u_char* raw_key;
+  size_t len;
+}ht_key_t;
+
+typedef struct ht_node_s{
+  void* data;
+  ht_key_t key;
+  struct ht_node_s* next;
+}ht_node_t;
+
+typedef struct ht_table_s{ 
+  int len;
+  ht_node_t* nodes;
+}ht_table_t;
 
 int ht_resize(ht_table_t* t);
 int ht_key_compare(ht_key_t k1,ht_key_t k2);
@@ -9,39 +30,20 @@ void* ht_get(ht_table_t* t,ht_key_t k);
 void ht_remove(ht_table_t* t,ht_key_t k);
 
 
-struct ht_node_s{
-  void* data;
-  ht_key_t key;
-  struct ht_node_s* next;
-};
-
-typedef struct ht_table_s{ 
-  int len;
-  ht_node_t* nodes;
-}ht_table_t;
-
-typedef struct ht_key_s{
-  uint32_t hash;
-  u_char* raw_key;
-  size_t len;
-}ht_key_t;
-
-
 inline ht_node_cp(ht_node_t *src,ht_node_t *dst)
 {
   dst->data = src->data;
 
-  dst->key->hash = src->key->hash;
-  dst->key->raw_key = src->key->raw_key;
-  dst->key->len = src->key->len;
+  dst->key.hash = src->key.hash;
+  dst->key.raw_key = src->key.raw_key;
+  dst->key.len = src->key.len;
 }
 
 inline ht_key_t ht_key_init(u_char* key,size_t len)
 {
-  struct ht_key_s k = {
-	.raw_key = key;
-	.len = len;
-  }
+  ht_key_t k;
+  k.raw_key = key;
+  k.len = len;
 
   return k;
 }
@@ -71,8 +73,7 @@ ht_murmur_hash2(u_char *data, size_t len)
 
   while (len >= 4) {
     k  = data[0];
-    k |= d
-	ata[1] << 8;
+    k |= data[1] << 8;
     k |= data[2] << 16;
     k |= data[3] << 24;
 
@@ -104,7 +105,4 @@ ht_murmur_hash2(u_char *data, size_t len)
   return h;
 }
 
-#endif
-
-
-
+#endif 

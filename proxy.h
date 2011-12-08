@@ -3,8 +3,16 @@
 #define _PROXY_H_
 #define L(x) printf("%s\n",x);
 
-#include "mempool.h"
 
+#include <stdio.h> 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include "config.h"
+#include "mempool.h"
 
 typedef struct pxy_master{
   struct socaddr* front_end_addr;

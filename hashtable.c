@@ -1,29 +1,12 @@
 #include "hashtable.h"
 #include "proxy.h"
 
-int 
-ht_set(u_char* key,void* val)
-{
-  return -1;
-}
-
-
-void*
-ht_get(u_char* key)
-{
-
-  return NULL;
-}
-
-
-void
-ht_remove(u_char* key)
-{
-
-}
+//int ht_set(ht_table_t* t,ht_key_t* key,void* val) { return -1; }
+//void* ht_get(ht_table_t* t,ht_key_t* key) { return NULL; }
+//void ht_remove(ht_table_t* t,ht_key_t* key) { }
 
 int 
-ht_resize(ht_table_t* t)
+ht_resize_tmp(ht_table_t* t)
 {
   int len,sz,pos,nnlast;
   uint32_t hash;
@@ -42,7 +25,7 @@ ht_resize(ht_table_t* t)
 
   /*recalcute the hash*/
   for(node=t->nodes;t;t++){
-    if(node && node->key){
+    if((node != NULL) && (node->key != NULL)){
 
       hash = node->key->hash;
       pos = hash % len;

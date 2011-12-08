@@ -2,14 +2,7 @@
  * Copyright liulijin<llj098@gmail.com>
  */ 
 
-#include <stdio.h> 
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include "config.h"
+#include "proxy.h"
 
 #define MAX_EVENTS 1000
 
@@ -30,7 +23,7 @@ start_worker()
     return -1;
   }
 
-  while(true){
+  while(1){
 
     nfds = epoll_wait(epollfd,events,MAX_EVENTS,-1);
 
@@ -38,10 +31,10 @@ start_worker()
      return -1;
 
     for(i=0;i<nfds;i++){
-      if(events[n].data.fd == lsock){
+      if(events[i].data.fd == lsock){
 
 	//do accept work
-	csock = accept(lsock);
+	//csock = accept(lsock);
 	
 	if(csock<0){
 	  return -1;
@@ -153,7 +146,7 @@ main(char* args,int len)
   int s = start();
   char st[2];
   //printf("%s\n%d","STARTED",s);
-  scanf("%s",&st);
+  //scanf("%s",&st);
 }
 
 
