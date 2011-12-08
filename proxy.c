@@ -1,14 +1,76 @@
 /*
- * Copyrtight liulijin<llj098@gmail.com>
+ * Copyright liulijin<llj098@gmail.com>
  */ 
 
 #include <stdio.h> 
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include "config.h"
+
+#define MAX_EVENTS 1000
+
+int 
+start_worker()
+{
+  struct epoll_event ev,events[MAX_EVENTS];
+  int i,lsock,csock,epollfd,nfds;
+
+  epollfd = epoll_creat(10);
+  if(epollfd < 0)
+    return -1;
+
+  ev.events = EPOLLIN;
+  ev.data.fd = lsock;
+
+  if(epoll_ctl(epollfd,EPOLL_CTL_ADD,lsock,&ev) < 0){
+    return -1;
+  }
+
+  while(true){
+
+    nfds = epoll_wait(epollfd,events,MAX_EVENTS,-1);
+
+    if(nfds < 0)
+     return -1;
+
+    for(i=0;i<nfds;i++){
+      if(events[n].data.fd == lsock){
+
+	//do accept work
+	csock = accept(lsock);
+	
+	if(csock<0){
+	  return -1;
+	}
+
+	setnonblocking(csock);
+	ev.events = EPOLLIN | EPOLLET;
+	ev.data.fd = csock;
+
+	if(epoll_ctl(epollfd,EPOLL_CTL_ADD,csock,
+		     &ev) < 0){
+	  return -1;
+	}
+      }
+      else{
+	 //do receive
+	
+      }
+    }
+  }
+  
+
+  //try to obtain the lock:
+  //todo...
+
+  
+
+
+}
 
 
 int 
