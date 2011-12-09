@@ -31,13 +31,13 @@ ht_resize_tmp(ht_table_t* t)
       hash = node->key.hash;
       pos = hash % len;
       
-      ht_node_cp(node,&(nn[pos]));
+      ht_node_from(node,&(nn[pos]));
       
       while(node->next){
 	
 	n = node->next;
 	nnlast = (ht_node_t*)calloc(1,sizeof(ht_node_t));
-	ht_node_cp(n,nnlast);
+	ht_node_from(n,nnlast);
 
 	nnlast = nnlast->next;
 	node=node->next;

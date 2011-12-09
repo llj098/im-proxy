@@ -7,6 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <errno.h>
+#include <time.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/epoll.h>
