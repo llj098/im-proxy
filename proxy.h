@@ -7,6 +7,7 @@
 #include "config.h"
 #include "mempool.h"
 #include "hashtable.h"
+#include "ev.h"
 
 #define pxy_memzero(buf, n)       (void) memset(buf, 0, n)
 

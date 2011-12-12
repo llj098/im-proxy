@@ -7,18 +7,22 @@
 #define EV_TIME 1
 #define EV_FILE 2
 
+/*same to epoll now*/
 #define EV_CTL_ADD 1
 #define EV_CTL_DEL 2
+#define EV_CTL_MOD 3
 
 #define EV_COUNT 10000
 
 struct ev_s;
+struct ev_file_item_s;
 
 typedef void ev_time_func(struct ev_s* ev,void* data);
-typedef void ev_file_func(struct ev_s* ev,int fd,int mask);
+typedef void ev_file_func(struct ev_s* ev,struct ev_file_item_s* fi);
 
 typedef struct ev_time_item_s{
   int id;
+  long ms; /*for the time event we only handle msec*/
   void* data;
   struct ev_time_item_s* next;
   ev_time_func* func;
@@ -27,6 +31,7 @@ typedef struct ev_time_item_s{
 typedef struct ev_file_item_s{
   int fd;
   int mask;
+  int events;
   void* data;
   ev_file_func* wfunc;
   ev_file_func* rfunc;
@@ -40,33 +45,19 @@ typedef struct ev_fired_s{
 typedef struct ev_s{
   int fd;
   void *data;
+  int next_time_id;
   ev_time_item_t* ti;
+  int stop;
 }ev_t;
 
-#define ev_get_time(__s,__m)			\
+#define ev_get_current_ms(__m)			\
   ({						\
     struct timeval __tv;			\
     gettimeofday(&__tv,NULL);			\
-    *__s = __tv.tv_sec;				\
     *__m = __tv.tv_usec/1000;			\
   })						\
 
-#define ev_add_ms_to_now(__ms,__s,__m)		\
-  ({						\
-    long __cur_s,__cur_m,__when_s,__when_m;	\
-    ev_get_time(&__cur_s,&__cur_m);		\
-    __when_s = __cur_s + __ms/1000;		\
-    __when_m =__cur_m + __ms%1000;		\
-    if(__when_m > 1000){			\
-      __when_s ++;				\
-      __when_m-=100;				\
-    }						\
-    *__s = __when_s;				\
-    *__m = __when_m;				\
-  })						
-
-
-#define ev_file_item_new(__fd,__d,__rf,__wf)			\
+#define ev_file_item_new(__fd,__d,__rf,__wf,__e)		\
   ({								\
     ev_file_item_t* __fi;					\
     __fi = (ev_file_item_t*)malloc(sizeof(ev_file_item_t*));	\
@@ -74,13 +65,21 @@ typedef struct ev_s{
     __fi->wfunc = __wf;						\
     __fi->rfunc = __rf;						\
     __fi->data = __d;						\
+    __fi->events = __e;						\
     __fi;							\
   })								\
 
+#define ev_time_item_new(__ev,__ms,__func,__data)	\
+  ({							\
+    ev_time_item_t* __ti;				\
+    __ti->id=__ev->next_time_id;			\
+    __ti->ms = __ms;					\
+    __ti->func = __func;				\
+    __ti->data = __data;				\
+    __ti;						\
+  })
 
 ev_t* ev_create();
-
 int ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item);
 int ev_time_item_ctl(ev_t* ev,int op,ev_time_item_t* item);
-
 void ev_main(ev_t* ev);
