@@ -1,7 +1,9 @@
 #ifndef _PROXY_H_
 
 #define _PROXY_H_
-#define L(x) printf("%s\n",x);
+#define I(x) printf("INFO:%s\n",x);
+#define W(x) printf("WARN:%s\n",x);
+#define E(x) printf("ERROR:%s\n",x);
 
 #include "sysinc.h"
 #include "config.h"
@@ -16,17 +18,24 @@ typedef struct pxy_master{
   
 } pxy_master_t;
 
-typedef struct pxy_woker{
-
-  struct sockaddr* back_end_addr;
-
-
-}prx_worker_t;
-
 typedef struct pxy_agent{
   int fd;
   int user_id;
   //so on
 }prx_agent_t;
+
+int 
+setnonblocking(int sock)
+{
+  int opts;
+  opts = fcntl(sock,F_GETFL);
+  if(opts<0) return -1;
+
+  opts = opts | O_NONBLOCK;
+  if(fcntl(sock,F_SETFL,opts) < 0)
+    return -1;
+
+  return 0;
+}
 
 #endif

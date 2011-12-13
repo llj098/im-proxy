@@ -4,100 +4,118 @@
 
 #include "proxy.h"
 
+typedef struct pxy_config_s{
+  ushort client_port;
+  ushort backend_port;
+  int worker_count;
+}pxy_config_t;
+
+typedef struct pxy_master_s{
+  pxy_confg_t* config;
+  int listen_fd;
+}pxy_master_t;
+
+typedef struct pxy_woker{
+  int connection_n;
+  ev_t* ev;
+}prx_worker_t;
+
 #define MAX_EVENTS 1000
 
+
+pxy_master_t* master;
+pxy_confg_t* config;
+pxy_woker_t* worker;
+
+
 int 
-setnonblocking(int sock)
+pxy_init_config()
 {
-  int opts;
-  opts = fcntl(sock,F_GETFL);
-  if(opts<0) return -1;
+  config = (pxy_master_t*)pxy_calloc(sizeof(*config));
 
-  opts = opts | O_NONBLOCK;
-  if(fcntl(sock,F_SETFL,opts) < 0)
-    return -1;
+  if(config){
+    config->client_port = 9000;
+    config->backend_port = 9001;
+    config->worker_count = 4;
 
-  return 0;
+    return 1;
+  }
+
+  return -1;
 }
 
 int 
-start_worker()
+pxy_init_master()
 {
-  struct epoll_event ev,events[MAX_EVENTS];
-  int i,lsock,csock,epollfd,nfds;
+  if(pxy_init_config()){
+    
+    master = (pxy_master_t*)malloc(sizeof(*master));
+    master->config = config;
 
-  lsock = csock = 0;
-  epollfd = epoll_create(10);
-  if(epollfd < 0)
-    return -1;
+    return 1;
+  }
+  return -1;
+}
 
-  ev.events = EPOLLIN;
-  ev.data.fd = lsock;
-
-  if(epoll_ctl(epollfd,EPOLL_CTL_ADD,lsock,&ev) < 0){
-    return -1;
+int 
+pxy_init_worker()
+{
+  worker = (pxy_woker_t*)malloc(sizeof(*worker));
+  if(worker) {
+    worker->ev = ev_create();
+    
+    return worker->ev;
   }
 
-  while(1){
+  return -1;
+}
 
-    nfds = epoll_wait(epollfd,events,MAX_EVENTS,-1);
-
-    if(nfds < 0)
-     return -1;
-
-    for(i=0;i<nfds;i++){
-      if(events[i].data.fd == lsock){
-
-	//do accept work
-	//csock = accept(lsock);
-	
-	if(csock<0){
-	  return -1;
-	}
-
-	setnonblocking(csock);
-	ev.events = EPOLLIN | EPOLLET;
-	ev.data.fd = csock;
-
-	if(epoll_ctl(epollfd,EPOLL_CTL_ADD,csock,
-		     &ev) < 0){
-	  return -1;
-	}
-      }
-      else{
-	 //do receive
-	
-      }
+int 
+pxy_worker_rfunc(ev_t* ev,ev_file_item_t* fi)
+{
+  int i=0;
+  if(fi->fd == master->listen_fd){
+    
+    for(;i<100;i++){
+      /*try to accept 100 times*/
     }
   }
-  
+  else{
+    /*read the socket data*/
+  }
+}
 
-  //try to obtain the lock:
-  //todo...
+int 
+pxy_start_worker()
+{
+  ev_file_item_t* fi ;
+  int fd = server->listen_fd;
 
-  
+  fi = ev_file_item_new(fd, NULL, pxy_worker_rfunc, NULL, (worker->ev));
 
-
+  return fi;
 }
 
 
 int 
-spawn_worker()
+pxy_spawn_worker()
 {
   int i = 0;
 
-  for(;i<4;i++){
+  for(;i<config->worker_count;i++){
 
     pid_t p = fork();
 
     if(p < 0) {
-	printf("%s","forkerror");
+      printf("%s","forkerror");
     }
     else if(p == 0){/*child*/
       printf("%d\n",getpid());
+      if(pxy_init_worker())
+	pxy_start_worker();
     }
     else{/*parent*/
-      printf("%d\n",getpid());
+      I("%d\n",getpid());
     }
   }
 
@@ -120,39 +138,33 @@ create_shm()
   return p;
 }
 
-int start()
+int 
+pxy_start()
 {
-  return create_shm();
-  return spawn_worker();
+  int s;
+  struct sockaddr_in addr1;
 
+  s = pxy_init_master();
 
-  int s = 1;
-  int listen_fd =socket(AF_INET,SOCK_STREAM,0);
-
-	
-  if(listen_fd < 0)
+  if(!r)
+    return -1;
+  
+  master->fd = listen_fd =socket(AF_INET,SOCK_STREAM,0);
+  if(master->listen_fd < 0)
     return -1;
 	
-  struct sockaddr_in addr1;
   addr1.sin_family = AF_INET;
-  addr1.sin_port = htons(CLIENT_LISTEN_PORT);
-  //addr1.sin_addr.s_addr = 
-
+  addr1.sin_port = htons(config->client_port);
 	
-  s = bind(listen_fd, 
-	   (struct sockaddr*)&addr1,
-	   sizeof(addr1)
-	   );
-
+  s = bind(master->listen_fd, (struct sockaddr*)&addr1, sizeof(addr1));
 
   if(s < 0)
     return -1;
 
-  listen(listen_fd,5);
+  if(listen(listen_fd,1000) < 0)
+    return -1;
 
-
-	
-  return s;
+  return pxy_spawn_worker();
 }
 
 int 
