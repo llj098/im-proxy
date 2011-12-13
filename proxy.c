@@ -45,26 +45,30 @@ pxy_init_worker()
   if(worker) {
     worker->ev = ev_create();
     
-    return worker->ev;
+    if(worker->ev != NULL)
+      return 1;
+    else
+      return -1;
   }
 
   return -1;
 }
 
-int 
+void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
   int i,f=0;
 
   if(fi->fd == master->listen_fd){
-    for(;i<100;i++){
+    for(i=0;i<100;i++){
       /*try to accept 100 times*/
-      f = accept(master->listen_fd,master->addr,sizeof(master->addr));
+      socklen_t sin_size = sizeof(master->addr);
+      f = accept(master->listen_fd,&(master->addr),&sin_size);
       if(f>0){
 
 	/* FIXME:maybe we should try best to accept and 
 	 * delay add events */
-	ev_file_item_new(f,NULL,pxy_worker_client_rfunc,NULL,ev);
+	ev_file_item_new(f,NULL,pxy_worker_client_rfunc,NULL,EV_READABLE);
       }
       else{
 	break;
@@ -80,11 +84,14 @@ int
 pxy_start_worker()
 {
   ev_file_item_t* fi ;
-  int fd = server->listen_fd;
+  int fd = master->listen_fd;
 
-  fi = ev_file_item_new(fd, NULL, pxy_worker_client_rfunc, NULL, (worker->ev));
+  fi = ev_file_item_new(fd, NULL, pxy_worker_client_rfunc, NULL, EV_READABLE);
 
-  return fi;
+  if(fi)
+    return 1;
+  else
+    return -1;
 }
 
 
@@ -106,7 +113,7 @@ pxy_spawn_worker()
 	pxy_start_worker();
     }
     else{/*parent*/
-      I("%d\n",getpid());
+      /*I("%d\n",getpid());*/
     }
   }
 
@@ -137,10 +144,10 @@ pxy_start()
 
   s = pxy_init_master();
 
-  if(!r)
+  if(!s)
     return -1;
   
-  master->fd = listen_fd =socket(AF_INET,SOCK_STREAM,0);
+  master->listen_fd =socket(AF_INET,SOCK_STREAM,0);
   if(master->listen_fd < 0)
     return -1;
 	
@@ -152,7 +159,7 @@ pxy_start()
   if(s < 0)
     return -1;
 
-  if(listen(listen_fd,1000) < 0)
+  if(listen(master->listen_fd,1000) < 0)
     return -1;
 
   return pxy_spawn_worker();
@@ -161,7 +168,7 @@ pxy_start()
 int 
 main(int len,char** args)
 {
-  int s = start();
+  int s = pxy_start();
   char st[2];
   printf("%s\n%d","STARTED",s);
   scanf("%s",st);

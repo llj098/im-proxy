@@ -47,6 +47,7 @@ typedef struct ev_s{
   void *data;
   int next_time_id;
   ev_time_item_t* ti;
+  void* api_data;
   int stop;
 }ev_t;
 
@@ -60,7 +61,7 @@ typedef struct ev_s{
 #define ev_file_item_new(__fd,__d,__rf,__wf,__e)		\
   ({								\
     ev_file_item_t* __fi;					\
-    __fi = (ev_file_item_t*)malloc(sizeof(ev_file_item_t*));	\
+    __fi = (ev_file_item_t*)malloc(sizeof(ev_file_item_t));	\
     __fi->fd = __fd;						\
     __fi->wfunc = __wf;						\
     __fi->rfunc = __rf;						\

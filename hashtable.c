@@ -16,7 +16,7 @@ ht_resize_tmp(ht_table_t* t)
   len = len << 1;
 
   if(len<0) {
-    L("Error, Max Length");
+    I("Error, Max Length");
     return -1;
   }
 

@@ -24,13 +24,13 @@ typedef struct pxy_config_s{
 typedef struct pxy_master_s{
   pxy_config_t* config;
   int listen_fd;
-  struct sockaddr add;
+  struct sockaddr addr;
 }pxy_master_t;
 
-typedef struct pxy_woker{
+typedef struct pxy_worker_s{
   int connection_n;
   ev_t* ev;
-}prx_worker_t;
+}pxy_worker_t;
 
 typedef struct pxy_agent{
   int fd;

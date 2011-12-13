@@ -16,6 +16,7 @@ ev_create(void* data)
     ev->data = data;
     ev->next_time_id = 0;
     ev->ti = NULL;
+    ev->api_data=malloc(sizeof(struct epoll_event)*EV_COUNT);
 
     return ev;
   }
@@ -50,66 +51,39 @@ ev_time_item_ctl(ev_t* ev,int op,ev_time_item_t* item)
   return -1;
 }
 
-int 
+void
 ev_main(ev_t* ev)
 {
-
   while(!ev->stop){
 
     if(ev->ti){
 
-      long curms;
-      struct ev_time_item_t *t,*prevti,*found,*iter;
+      long now;
+      ev_time_item_t* iter;
 
-      ev_get_current_ms((&curms));
-      iter = prevti = t = ev->ti;
-
-      do{
-    
-	t = iter;
-	iter = iter->next;
-
-	if(t->ms < curms){
-
-	  //remove the event from event
-	  if(prevti != t){
-	    prevti->next = t->next;
-	  }
-	  else{
-	    ev->ti = t->next;
-	  }
-
-	  /*add to found list*/
-	  t->next = found;
-	  found = t;
+      ev_get_current_ms((&now));
+      
+      for(iter=(ev->ti); iter!=NULL; iter=iter->next){
+	if((iter->ms) < now){
+	  iter->func(ev,iter);
 	}
-
-	prevti = prevti->next;
-
-      }while(iter);
-
-      /*fire the events*/
-      while(found){
-	found->func(found->id,found->data);
-	found = found->next;
       }
+
     }
 
     int i,j;
-    j = epoll_wait(ev->fd,ev->events,EV_COUNT,100);
+    struct epoll_event* e = ev->api_data;
+     
+    j = epoll_wait(ev->fd,e,EV_COUNT,100);
 
     for(i=0;i<j;i++){
-      ev_file_item_t* fi = (ev_file_item_t*)ev->events[j].data.ptr;
+      ev_file_item_t* fi = (ev_file_item_t*)e[j].data.ptr;
 
-      if(ev->events[j].events | EPOLLIN)
+      if((e[j].events) | EPOLLIN)
 	fi->rfunc(ev,fi);
     
-      if(ev->events[j].events | EPOLLOUT)
+      if(e[j].events | EPOLLOUT)
 	fi->wfunc(ev,fi);
     }
   }
 }
-
-
-
-
