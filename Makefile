@@ -5,4 +5,4 @@ CPP =	gcc -E
 LINK =	$(CC)
 
 all:
-	$(CC) -c $(CFLAGS) proxy.c config.h hashtable.c hashtable.h mempool.c mempool.h ev.h ev.c
+	$(CC) -c $(CFLAGS) proxy.c config.h hashtable.c hashtable.h mempool.c mempool.h ev.h ev.c connection.c connection.h
