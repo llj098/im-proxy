@@ -1,16 +1,22 @@
 #include "proxy.h"
 
 /*
- * fixed length,list style memory pool
+ * list style memory pool
  */ 
+
 mp_pool_t*
-pcreate(int size,int max,char* name)
+mp_create(int max,char* name)
 {
-  mp_pool_t* p = (mp_pool_t*)malloc(sizeof(mp_pool_t*));
+  mp_pool_t* p = malloc(sizeof(mp_pool_t));
   
   if(p){
     p->size = size;
     p->max = max;
+
+    for (int i = 0; i<MP_MAX_LIST_COUNT ; ++i) {
+	
+    }
+
     p->freelist = (mp_node_t**)malloc(DEFAULT_POOL_LEN*size);
 
     if(!(p->freelist))
@@ -24,7 +30,7 @@ pcreate(int size,int max,char* name)
 }
 
 void*
-palloc(mp_pool_t* p)
+mp_alloc(mp_pool_t* p)
 {
   void* d= NULL;
   if(p){
@@ -35,7 +41,7 @@ palloc(mp_pool_t* p)
 }
 
 void*
-pcalloc(mp_pool_t* p)
+mp_calloc(mp_pool_t* p)
 {
   void* d = palloc(p);
   if(d){
@@ -46,7 +52,7 @@ pcalloc(mp_pool_t* p)
 }
 
 void 
-pfree(mp_pool_t* p,void* d)
+mp_free(mp_pool_t* p,void* d)
 {
   if(p){
     mp_node_t* node =  (mp_node_t*)d;

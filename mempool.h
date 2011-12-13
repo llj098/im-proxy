@@ -3,9 +3,9 @@
 
 #include "sysinc.h"
 
-#define MAX_ALLOC_FROM_POOL  4095
-#define DEFAULT_POOL_LEN     64				   
-
+#define MP_MAX_ALLOC_FROM_POOL  4095
+#define MP_MAX_LIST_COUNT 8
+#define MP_DEFAULT_LIST_LEN     64				   
 
 typedef struct mp_node_s{
   void* data;
@@ -22,13 +22,22 @@ typedef struct mp_pool_s{
   char name[12];
 }mp_pool_t;
 
-mp_pool_t* pcreate(int size,int max,char* name);
-void* palloc(mp_pool_t* p);
-void* pcalloc(mp_pool_t* p);
-void pfree(mp_pool_t* p,void* d);
+static int mp_list_count[] = {
+  32,
+  64,
+  128,
+  256,
+  512,
+  1024,
+  2048,
+  4095
+};
+
+mp_pool_t* mp_create(int size,int max,char* name);
+void* mp_alloc(mp_pool_t* p);
+void* mp_calloc(mp_pool_t* p);
+void mp_free(mp_pool_t* p,void* d);
 void* pxy_calloc(size_t size);
-
-
 
 #endif
 

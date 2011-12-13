@@ -8,7 +8,6 @@ pxy_master_t* master;
 pxy_config_t* config;
 pxy_worker_t* worker;
 
-
 int 
 pxy_init_config()
 {

@@ -25,11 +25,14 @@ typedef struct pxy_master_s{
   pxy_config_t* config;
   int listen_fd;
   struct sockaddr addr;
+  mp_pool_t* pool;
 }pxy_master_t;
 
 typedef struct pxy_worker_s{
   int connection_n;
   ev_t* ev;
+  hashtable_t* conns;
+  mp_pool_t* pool;
 }pxy_worker_t;
 
 typedef struct pxy_agent{
