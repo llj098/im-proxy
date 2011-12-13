@@ -4,34 +4,15 @@
 
 #include "proxy.h"
 
-typedef struct pxy_config_s{
-  ushort client_port;
-  ushort backend_port;
-  int worker_count;
-}pxy_config_t;
-
-typedef struct pxy_master_s{
-  pxy_confg_t* config;
-  int listen_fd;
-}pxy_master_t;
-
-typedef struct pxy_woker{
-  int connection_n;
-  ev_t* ev;
-}prx_worker_t;
-
-#define MAX_EVENTS 1000
-
-
 pxy_master_t* master;
-pxy_confg_t* config;
-pxy_woker_t* worker;
+pxy_config_t* config;
+pxy_worker_t* worker;
 
 
 int 
 pxy_init_config()
 {
-  config = (pxy_master_t*)pxy_calloc(sizeof(*config));
+  config = (pxy_config_t*)pxy_calloc(sizeof(*config));
 
   if(config){
     config->client_port = 9000;
@@ -60,7 +41,7 @@ pxy_init_master()
 int 
 pxy_init_worker()
 {
-  worker = (pxy_woker_t*)malloc(sizeof(*worker));
+  worker = (pxy_worker_t*)malloc(sizeof(*worker));
   if(worker) {
     worker->ev = ev_create();
     
@@ -71,17 +52,27 @@ pxy_init_worker()
 }
 
 int 
-pxy_worker_rfunc(ev_t* ev,ev_file_item_t* fi)
+pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  int i=0;
+  int i,f=0;
+
   if(fi->fd == master->listen_fd){
-    
     for(;i<100;i++){
       /*try to accept 100 times*/
+      f = accept(master->listen_fd,master->addr,sizeof(master->addr));
+      if(f>0){
+
+	/* FIXME:maybe we should try best to accept and 
+	 * delay add events */
+	ev_file_item_new(f,NULL,pxy_worker_client_rfunc,NULL,ev);
+      }
+      else{
+	break;
+      }
     }
   }
   else{
-    /*read the socket data*/
+    /*TODO:read the socket data*/
   }
 }
 
@@ -91,7 +82,7 @@ pxy_start_worker()
   ev_file_item_t* fi ;
   int fd = server->listen_fd;
 
-  fi = ev_file_item_new(fd, NULL, pxy_worker_rfunc, NULL, (worker->ev));
+  fi = ev_file_item_new(fd, NULL, pxy_worker_client_rfunc, NULL, (worker->ev));
 
   return fi;
 }
