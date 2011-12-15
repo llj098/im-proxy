@@ -1,10 +1,8 @@
 #ifndef _HASHTABLE_H_
-
 #define _HASHTABLE_H_
+
 #define HT_INIT_SIZE 16
-
 #include "proxy.h"
-
 
 typedef struct ht_key_s{
   uint32_t hash;

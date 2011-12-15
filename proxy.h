@@ -9,10 +9,11 @@
 
 
 #include "sysinc.h"
+#include "ev.h"
 #include "config.h"
 #include "mempool.h"
 #include "hashtable.h"
-#include "ev.h"
+#include "worker.h"
 
 
 typedef struct pxy_config_s{
@@ -27,13 +28,6 @@ typedef struct pxy_master_s{
   struct sockaddr addr;
   mp_pool_t* pool;
 }pxy_master_t;
-
-typedef struct pxy_worker_s{
-  int connection_n;
-  ev_t* ev;
-  hashtable_t* conns;
-  mp_pool_t* pool;
-}pxy_worker_t;
 
 typedef struct pxy_agent{
   int fd;

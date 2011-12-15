@@ -1,3 +1,6 @@
+#ifndef _EV_H_
+#define _EV_H_
+
 #include "sysinc.h"
 
 #define EV_WRITABLE 1
@@ -84,3 +87,5 @@ ev_t* ev_create();
 int ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item);
 int ev_time_item_ctl(ev_t* ev,int op,ev_time_item_t* item);
 void ev_main(ev_t* ev);
+
+#endif

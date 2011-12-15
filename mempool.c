@@ -1,49 +1,50 @@
 #include "proxy.h"
 
 /*
- * list style memory pool
+ * List style memory pool
  */ 
 
+
 mp_pool_t*
-mp_create(int max,char* name)
+mp_create(int size,int max,char* name)
 {
   mp_pool_t* p = malloc(sizeof(mp_pool_t));
   
   if(p){
     p->size = size;
     p->max = max;
+    p->used = 0;
+    p->allocated = 0;
 
-    for (int i = 0; i<MP_MAX_LIST_COUNT ; ++i) {
-	
-    }
-
-    p->freelist = (mp_node_t**)malloc(DEFAULT_POOL_LEN*size);
-
-    if(!(p->freelist))
-      return NULL;
- 
     if(name)
-	strncpy(p->name,name,sizeof(p->name));
- }
+      strncpy(p->name,name,sizeof(p->name));
+  }
 
   return p;
 }
+
 
 void*
 mp_alloc(mp_pool_t* p)
 {
   void* d= NULL;
-  if(p){
-    return p->freelist[0]->data;
+
+  if(p->freelist){
+    d = (void*)p->freelist;
+    p->freelist = *(void**)p->freelist;
+  }
+  else{
+    d = malloc(p->size);
   }
 
   return d;
 }
 
+
 void*
 mp_calloc(mp_pool_t* p)
 {
-  void* d = palloc(p);
+  void* d = mp_alloc(p);
   if(d){
     pxy_memzero(d,p->size);
   }
@@ -51,15 +52,22 @@ mp_calloc(mp_pool_t* p)
   return d;
 }
 
+
+/*
+ * we use the data area to save the 'next' pointer 
+ */
 void 
 mp_free(mp_pool_t* p,void* d)
 {
   if(p){
-    mp_node_t* node =  (mp_node_t*)d;
-    node->next = p->freelist[0];
-    p->freelist = &node;
+    *(void**)d = p->freelist;
+    p->freelist = (void**)d;
   }
 }
+
+
+
+
 
 void*
 pxy_calloc(size_t size)
