@@ -43,6 +43,7 @@ pxy_init_worker()
   worker = (pxy_worker_t*)malloc(sizeof(*worker));
   if(worker) {
     worker->ev = ev_create();
+    worker->pool = mp_create(BUFFER_SIZE,0,"WorkerBufPool");
     
     if(worker->ev != NULL)
       return 1;
@@ -56,7 +57,7 @@ pxy_init_worker()
 void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  int i,f=0;
+  int i,f,n=0;
 
   if(fi->fd == master->listen_fd){
     for(i=0;i<100;i++){
@@ -76,6 +77,9 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
   }
   else{
     /*TODO:read the socket data*/
+    if(ioctl(fi->fd,FIONREAD,&n)) {
+      
+    }
   }
 }
 

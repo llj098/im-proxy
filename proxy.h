@@ -5,22 +5,31 @@
 #define W(x) printf("WARN:%s\n",x)
 #define E(x) printf("ERROR:%s\n",x)
 #define MAX_EVENTS 1000
+#define BUFFER_SIZE 1460
 #define pxy_memzero(buf, n)       (void) memset(buf, 0, n)
 
 
 #include "sysinc.h"
 #include "ev.h"
+#include "list.h"
 #include "config.h"
 #include "mempool.h"
 #include "hashtable.h"
 #include "worker.h"
-
+#include "buffer.h"
 
 typedef struct pxy_config_s{
   short client_port;
   short backend_port;
   int worker_count;
 }pxy_config_t;
+
+typedef struct pxy_worker_s{
+  int connection_n;
+  ev_t* ev;
+  //ht_table_t* conns;
+  mp_pool_t* pool;
+}pxy_worker_t;
 
 typedef struct pxy_master_s{
   pxy_config_t* config;
