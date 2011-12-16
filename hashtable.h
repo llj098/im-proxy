@@ -7,23 +7,25 @@
 typedef struct ht_key_s{
   uint32_t hash;
   uint32_t key;
-  size_t len;
 }ht_key_t;
 
 typedef struct ht_node_s{
-  void* data;
   ht_key_t key;
+  void* data;
   struct ht_node_s* next;
 }ht_node_t;
 
 typedef struct ht_table_s{ 
   int len;
-  ht_node_t* nodes;
+  int alloced;
+  int used;
+  ht_node_t **nodes;
+  mp_pool_t* pool;
 }ht_table_t;
 
 int ht_resize(ht_table_t* t);
 int ht_key_compare(ht_key_t k1,ht_key_t k2);
-int ht_set(ht_table_t* t,ht_key_t k,void* data);
+int ht_set(ht_table_t* t,uint32_t k,void* v);
 void* ht_get(ht_table_t* t,ht_key_t k);
 void ht_remove(ht_table_t* t,ht_key_t k);
 
@@ -33,7 +35,6 @@ void ht_remove(ht_table_t* t,ht_key_t k);
     (__dst)->data = (__src)->data;		\
     (__dst)->key.hash = (__src)->key.hash;	\
     (__dst)->key.key = (__src)->key.key;	\
-    (__dst)->key.len = (__src)->key.len;	\
   })
 
 #define ht_key_init(__key,__len)		\
@@ -44,16 +45,19 @@ void ht_remove(ht_table_t* t,ht_key_t k);
     __k;					\
   })
 
-#define ht_create(__pool)					\
-  ({								\
-    ht_table_t* __t ;						\
-    __t = (ht_table_t*)pxy_calloc(sizeof(ht_table_t*));		\
-    __t->len = HT_INIT_SIZE;					\
-    __t->nodes = (ht_node_t*)pxy_calloc(sizeof(ht_node_t));	\
-    if(!__->nodes)						\
-      NULL;							\
-    else							\
-      __t;							\
+#define ht_create()					\
+  ({							\
+    ht_table_t* __t ;					\
+    __t = (ht_table_t*)pxy_calloc(sizeof(ht_table_t));	\
+    __t->len = HT_INIT_SIZE;				\
+    __t->pool = mp_create(sizeof(ht_node_t),0,"HT");	\
+    if(__t->pool){					\
+      __t->nodes = mp_alloc(__->pool);			\
+    }							\
+    if(!__t->nodes)					\
+      NULL;						\
+    else						\
+      __t;						\
   })
 
 inline int ht_init(ht_table_t* t)
@@ -62,7 +66,7 @@ inline int ht_init(ht_table_t* t)
     return -1;
 
   t->len = HT_INIT_SIZE;
-  t->nodes = (ht_node_t*)calloc(1,sizeof(struct ht_node_s) 
+  t->nodes = (ht_node_t**)calloc(1,sizeof(struct ht_node_s) 
 				* HT_INIT_SIZE);
   if(!t->nodes)
     return -1;

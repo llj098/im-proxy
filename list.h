@@ -1,6 +1,8 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
+/*a link list like linux kernel's*/
+
 typedef struct list_head_s{
   struct list_head_s *prev;
   struct list_head_s *next;
@@ -39,8 +41,8 @@ static inline void __list_add(list_head_t *new,
 }
 
 
-#define list_add_append(entry,head)		\
-  __list_add(entry, head->prev, head)		
+#define list_append(entry,head)			\
+  __list_add(entry, (head)->prev, (head))		
 
 #define list_insert(entry,head)			\
   __list_add(entry, head, head->next)

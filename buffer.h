@@ -11,9 +11,9 @@ typedef struct buffer_s {
 #define buffer_fetch(pool,datapool)		\
   ({						\
     buffer_t *__buffer;				\
-    __buffer = mp_palloc((pool));		\
-    __buffer->data = mp_pcalloc((datapool));	\
-    INIT_LIST_HEAD(__buffer->list);		\
+    __buffer = mp_alloc((pool));		\
+    __buffer->data = mp_calloc((datapool));	\
+    INIT_LIST_HEAD(&__buffer->list);		\
     __buffer;					\
   })
 

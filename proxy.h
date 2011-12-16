@@ -15,7 +15,6 @@
 #include "config.h"
 #include "mempool.h"
 #include "hashtable.h"
-#include "worker.h"
 #include "buffer.h"
 
 typedef struct pxy_config_s{
@@ -29,6 +28,7 @@ typedef struct pxy_worker_s{
   ev_t* ev;
   //ht_table_t* conns;
   mp_pool_t* pool;
+  mp_pool_t* datapool;
 }pxy_worker_t;
 
 typedef struct pxy_master_s{

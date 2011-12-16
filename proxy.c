@@ -57,7 +57,8 @@ pxy_init_worker()
 void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  int i,f,n=0;
+  int i,f,n,readn=0;
+  buffer_t *buffer,*buffer_head = NULL;
 
   if(fi->fd == master->listen_fd){
     for(i=0;i<100;i++){
@@ -76,8 +77,34 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
     }
   }
   else{
-    /*TODO:read the socket data*/
-    if(ioctl(fi->fd,FIONREAD,&n)) {
+
+    if( ioctl(fi->fd,FIONREAD,&readn) >0 && readn > 0) {
+      
+      n = readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
+
+      struct iovec *iov  = malloc(sizeof(*iov)*n);
+
+      for(i=0; i<n ;i++){
+
+	if(buffer_head == NULL){
+	  buffer_head = buffer_fetch(worker->pool,worker->datapool);
+
+	  iov[i].iov_base = buffer_head->data;
+	  iov[i].iov_len = BUFFER_SIZE;
+	}
+	else{
+	  buffer = buffer_fetch(worker->pool,worker->datapool);
+	  list_append(&buffer->list,&buffer_head->list);
+
+	  iov[i].iov_base = buffer->data;
+	  iov[i].iov_len = BUFFER_SIZE;
+	}
+      }
+      
+      readn = readv(fi->fd,iov,n);
+      if(readn){
+	//handle received data
+      }
       
     }
   }
