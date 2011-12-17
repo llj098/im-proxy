@@ -79,26 +79,25 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
   else{
 
     if( ioctl(fi->fd,FIONREAD,&readn) >0 && readn > 0) {
-      
+
       n = readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
 
-      struct iovec *iov  = malloc(sizeof(*iov)*n);
+      struct iovec iov[n];
+      buffer_head = buffer_fetch(worker->pool,worker->datapool);
+      buffer_head->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
+      iov[i].iov_base = buffer_head->data;
+      iov[i].iov_len = buffer_head->len;
+      readn -= BUFFER_SIZE;
 
-      for(i=0; i<n ;i++){
+      for(i=1; i < n ;i++){
 
-	if(buffer_head == NULL){
-	  buffer_head = buffer_fetch(worker->pool,worker->datapool);
+	buffer = buffer_fetch(worker->pool,worker->datapool);
+	buffer->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
+	list_append(&buffer->list,&buffer_head->list);
 
-	  iov[i].iov_base = buffer_head->data;
-	  iov[i].iov_len = BUFFER_SIZE;
-	}
-	else{
-	  buffer = buffer_fetch(worker->pool,worker->datapool);
-	  list_append(&buffer->list,&buffer_head->list);
-
-	  iov[i].iov_base = buffer->data;
-	  iov[i].iov_len = BUFFER_SIZE;
-	}
+	iov[i].iov_base = buffer->data;
+	iov[i].iov_len = BUFFER_SIZE;
+	readn -= BUFFER_SIZE;
       }
       
       readn = readv(fi->fd,iov,n);
