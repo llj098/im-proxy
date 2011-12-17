@@ -26,8 +26,8 @@ typedef struct ht_table_s{
 int ht_resize(ht_table_t* t);
 int ht_key_compare(ht_key_t k1,ht_key_t k2);
 int ht_set(ht_table_t* t,uint32_t k,void* v);
-void* ht_get(ht_table_t* t,ht_key_t k);
-void ht_remove(ht_table_t* t,ht_key_t k);
+void* ht_get(ht_table_t* t,uint32_t k);
+void* ht_remove(ht_table_t* t,uint32_t k);
 
 
 #define ht_node_from(__src,__dst)		\
@@ -52,7 +52,7 @@ void ht_remove(ht_table_t* t,ht_key_t k);
     __t->len = HT_INIT_SIZE;				\
     __t->pool = mp_create(sizeof(ht_node_t),0,"HT");	\
     if(__t->pool){					\
-      __t->nodes = mp_alloc(__->pool);			\
+      __t->nodes = mp_alloc(t__->pool);			\
     }							\
     if(!__t->nodes)					\
       NULL;						\

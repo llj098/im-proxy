@@ -1,6 +1,7 @@
 #include "proxy.h"
 
-int ht_set(ht_table_t* t,uint32_t k,void* v)
+int 
+ht_set(ht_table_t* t,uint32_t k,void* v)
 {
   if(v == NULL)
     return -1;
@@ -8,23 +9,80 @@ int ht_set(ht_table_t* t,uint32_t k,void* v)
   ht_node_t *node;
   int pos;
 
+  node = ht_get(t,k);
+  if(node) {
+    return -2;
+  }
+
   node = mp_alloc(t->pool);
-  
+
   if(node) {
     node->key.key = k;
     node->key.hash = ht_hash_func(k);
     pos = node->key.hash % t->len;
     
-    if(t->nodes[pos]){
-
+    if(t->nodes[pos]){/*conflict*/
+      node->next = t->nodes[pos];
     }
+
+    t->nodes[pos] = node;
+    return 1;
   }
   
-  return 1;
+  return -1;
 
 }
-void* ht_get(ht_table_t* t,ht_key_t k){ return NULL; }
-void ht_remove(ht_table_t* t,ht_key_t k){}
+
+
+void* 
+ht_get(ht_table_t* t,uint32_t k)
+{ 
+  if(!t)
+    return NULL;
+
+  uint32_t hash,pos;
+  ht_node_t *node;
+  
+  hash = ht_hash_func(k);
+  pos = hash % t->len;
+  node = t->nodes[pos];
+  
+  while(node){
+    if(node->key.key == k)
+      return node->data;
+    else
+      node = node->next;
+  }
+
+  return NULL; 
+}
+
+
+void* 
+ht_remove(ht_table_t* t,uint32_t k)
+{
+  if(!t)
+    return NULL;
+  
+  uint32_t hash,pos;
+  ht_node_t *node;
+  void *d = NULL;
+
+  hash = ht_hash_func(k);
+  pos = hash % t->len;
+  node = t->nodes[pos];
+  
+  while(node){
+    if(node->key.key == k) {
+      d = node->data;
+      mp_free(t->pool,node);
+    }
+    else
+      node = node->next;
+  }
+
+  return d;
+}
 
 
 int 
