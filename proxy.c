@@ -45,6 +45,7 @@ pxy_init_worker()
     worker->ev = ev_create();
     worker->pool = mp_create(BUFFER_SIZE,0,"WorkerBufPool");
     
+    
     if(worker->ev != NULL)
       return 1;
     else
@@ -115,12 +116,26 @@ pxy_start_worker()
   ev_file_item_t* fi ;
   int fd = master->listen_fd;
 
-  fi = ev_file_item_new(fd, NULL, pxy_worker_client_rfunc, NULL, EV_READABLE);
+  fi = ev_file_item_new(fd, worker, pxy_worker_client_rfunc, NULL, EV_READABLE);
 
-  if(fi)
-    return 1;
-  else
-    return -1;
+  if(!fi){
+    goto start_failed;
+  }
+
+  worker->bfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+  if(!worker->bfd){
+    goto start_failed;
+  }
+  
+  if(!connect(worker->bfd,(struct sockaddr*)worker->baddr,
+	      sizeof(*(worker->baddr)))){
+    goto start_failed;
+  }
+    
+  return 1;
+
+start_failed:
+  return -1;
 }
 
 

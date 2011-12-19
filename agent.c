@@ -34,8 +34,19 @@ pxy_agent_data_received(pxy_agent_t *agent)
 int 
 pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
 {
+  if(!agent)
+    return -1;
 
-  return -1;
+  int rn;
+  
+  while(n > BUFFER_SIZE){
+    list_remove(&agent->buffer->list);
+    buffer_release(agent->buffer,worker->pool,worker->datapool);
+    rn += BUFFER_SIZE;
+  }
+
+  
+  return rn;
 }
 
 
@@ -60,7 +71,7 @@ pxy_agent_upstream(pxy_agent_t *agent)
 
     if(i == 0){
 
-      iov[i].iov_base = agent->buffer->data + p;
+      iov[i].iov_base = ((char *)(agent->buffer->data))+ p;
       iov[i].iov_len = BUFFER_SIZE - p;
       
       continue;
@@ -86,9 +97,6 @@ pxy_agent_upstream(pxy_agent_t *agent)
 
   return writen;
 }
-
-
-
 
 
 

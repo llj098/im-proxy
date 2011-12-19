@@ -23,6 +23,13 @@ mp_create(int size,int max,char* name)
   return p;
 }
 
+void
+mp_destroy(mp_pool_t *pool)
+{
+  /*TODO:implementation*/
+  
+}
+
 
 void*
 mp_alloc(mp_pool_t* p)
@@ -64,8 +71,6 @@ mp_free(mp_pool_t* p,void* d)
     p->freelist = (void**)d;
   }
 }
-
-
 
 
 

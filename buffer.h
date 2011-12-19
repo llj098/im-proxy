@@ -18,7 +18,7 @@ typedef struct buffer_s {
     __buffer;					\
   })
 
-#define bufffer_release(buf,pool,datapool)	\
+#define buffer_release(buf,pool,datapool)	\
   ({						\
     mp_free(datapool,buf->data);		\
     mp_free(pool,buf);				\

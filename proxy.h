@@ -16,6 +16,7 @@
 #include "mempool.h"
 #include "hashtable.h"
 #include "buffer.h"
+#include "agent.h"
 
 typedef struct pxy_config_s{
   short client_port;
@@ -26,6 +27,7 @@ typedef struct pxy_config_s{
 typedef struct pxy_worker_s{
   int connection_n;
   int bfd;
+  struct sockaddr_in *baddr;
   ev_t* ev;
   //ht_table_t* conns;
   mp_pool_t* pool;

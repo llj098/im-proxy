@@ -45,20 +45,27 @@ void* ht_remove(ht_table_t* t,uint32_t k);
     __k;					\
   })
 
-#define ht_create()					\
-  ({							\
-    ht_table_t* __t ;					\
-    __t = (ht_table_t*)pxy_calloc(sizeof(ht_table_t));	\
-    __t->len = HT_INIT_SIZE;				\
-    __t->pool = mp_create(sizeof(ht_node_t),0,"HT");	\
-    if(__t->pool){					\
-      __t->nodes = mp_alloc(t__->pool);			\
-    }							\
-    if(!__t->nodes)					\
-      NULL;						\
-    else						\
-      __t;						\
-  })
+
+inline ht_table_t* ht_create()
+{
+  ht_table_t *t = pxy_calloc(sizeof(*t));
+  if(!t)goto failed;
+  t->len = HT_INIT_SIZE;
+  t->pool = mp_create(sizeof(ht_node_t),0,"HT");
+  if(!t->pool)goto failed;
+  t->nodes = mp_alloc(t->pool);
+  if(!t->nodes) goto failed;
+
+  return t;
+
+ failed:
+  if(t->pool)
+    mp_destroy(t->pool);
+  if(t)
+    free(t);
+
+  return NULL;
+}
 
 inline int ht_init(ht_table_t* t)
 {
@@ -67,7 +74,7 @@ inline int ht_init(ht_table_t* t)
 
   t->len = HT_INIT_SIZE;
   t->nodes = (ht_node_t**)calloc(1,sizeof(struct ht_node_s) 
-				* HT_INIT_SIZE);
+				 * HT_INIT_SIZE);
   if(!t->nodes)
     return -1;
 
