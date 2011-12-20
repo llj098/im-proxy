@@ -1,5 +1,4 @@
 #ifndef _PROXY_H_
-
 #define _PROXY_H_
 #define I(x) printf("INFO:%s\n",x)
 #define W(x) printf("WARN:%s\n",x)
