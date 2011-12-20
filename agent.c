@@ -41,7 +41,7 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
   
   while(n > BUFFER_SIZE){
     list_remove(&agent->buffer->list);
-    buffer_release(agent->buffer,worker->pool,worker->datapool);
+    buffer_release(agent->buffer,worker->buf_pool,worker->buf_data_pool);
     rn += BUFFER_SIZE;
   }
 
