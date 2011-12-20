@@ -24,4 +24,22 @@ typedef struct buffer_s {
     mp_free(pool,buf);				\
   })
 
+#define buffer_read_char(buf,idx)		\
+  ({						\
+    char * __c;					\
+    int __i = (idx);				\
+    buffer_t *__b = (buf);			\
+    while(unlikely(__i > __b->len)){		\
+      __i -= BUFFER_SIZE;			\
+      __b = __b->next;				\
+    }						\
+    __c = (char*)__b->data;			\
+    __c += i;					\
+    __c;					\
+  })
+  
+
+  
+
 #endif
+

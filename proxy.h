@@ -12,10 +12,11 @@
 #include "sysinc.h"
 #include "ev.h"
 #include "list.h"
+#include "buffer.h"
 #include "config.h"
 #include "mempool.h"
 #include "hashtable.h"
-#include "buffer.h"
+#include "agent.h"
 
 typedef struct pxy_config_s{
   short client_port;
@@ -27,8 +28,9 @@ typedef struct pxy_worker_s{
   int connection_n;
   ev_t* ev;
   //ht_table_t* conns;
-  mp_pool_t* pool;
-  mp_pool_t* datapool;
+  mp_pool_t *buf_pool;
+  mp_pool_t *buf_data_pool;
+  mp_pool_t *agent_pool;
 }pxy_worker_t;
 
 typedef struct pxy_master_s{
@@ -37,12 +39,6 @@ typedef struct pxy_master_s{
   struct sockaddr addr;
   mp_pool_t* pool;
 }pxy_master_t;
-
-typedef struct pxy_agent{
-  int fd;
-  int user_id;
-  //so on
-}prx_agent_t;
 
 int 
 setnonblocking(int sock)

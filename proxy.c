@@ -43,7 +43,9 @@ pxy_init_worker()
   worker = (pxy_worker_t*)malloc(sizeof(*worker));
   if(worker) {
     worker->ev = ev_create();
-    worker->pool = mp_create(BUFFER_SIZE,0,"WorkerBufPool");
+    worker->agent_pool = mp_create(sizeof(pxy_agent_t),0,"AgentPool");
+    worker->buf_data_pool = mp_create(BUFFER_SIZE,0,"BufDataPool");
+    worker->buf_pool = mp_create(sizeof(buffer_t),0,"BufPool");
     
     if(worker->ev != NULL)
       return 1;
@@ -69,7 +71,8 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
 	/* FIXME:maybe we should try best to accept and 
 	 * delay add events */
-	ev_file_item_new(f,NULL,pxy_worker_client_rfunc,NULL,EV_READABLE);
+	pxy_agent_t *agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
+	ev_file_item_new(f,agent,pxy_worker_client_rfunc,NULL,EV_READABLE);
       }
       else{
 	break;
@@ -83,7 +86,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
       n = readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
 
       struct iovec iov[n];
-      buffer_head = buffer_fetch(worker->pool,worker->datapool);
+      buffer_head = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
       buffer_head->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
       iov[i].iov_base = buffer_head->data;
       iov[i].iov_len = buffer_head->len;
@@ -91,7 +94,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
       for(i=1; i < n ;i++){
 
-	buffer = buffer_fetch(worker->pool,worker->datapool);
+	buffer = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
 	buffer->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
 	list_append(&buffer->list,&buffer_head->list);
 
@@ -103,8 +106,17 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
       readn = readv(fi->fd,iov,n);
       if(readn){
 	//handle received data
+	pxy_agent_t *agent = ev->data;
+	if(agent){
+	  if(agent->buffer){
+	    list_append(&buffer_head->list,&agent->buffer->list);
+	  }
+	}
+	else{
+	  E("fd has no agent,ev->data is NULL");
+	  close(fi->fd);
+	}
       }
-      
     }
   }
 }
