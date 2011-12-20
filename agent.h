@@ -3,13 +3,13 @@
 
 #include "proxy.h"
 
-
 typedef struct pxy_agent_s{
   struct buffer_s *buffer;
   int fd;
   int user_id;
   int parse_idx;
-  //so on...
+  int sent;
+ //so on...
 }pxy_agent_t;
 
 
@@ -21,8 +21,11 @@ typedef struct pxy_agent_s{
     __agent->user_id = (__userid);			\
     __agent->buffer = (__buffer);			\
     __agent->parse_idx = 0;				\
+    __agent->sent = 0;					\
     __agent;						\
   })
+
+
 
 
 #endif

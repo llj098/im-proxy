@@ -26,6 +26,8 @@ typedef struct pxy_config_s{
 
 typedef struct pxy_worker_s{
   int connection_n;
+  int bfd;
+  struct sockaddr_in *baddr;
   ev_t* ev;
   //ht_table_t* conns;
   mp_pool_t *buf_pool;

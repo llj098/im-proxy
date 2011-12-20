@@ -34,6 +34,7 @@ struct mp_pool_list_s{
   })					
 
 mp_pool_t* mp_create(int size,int max,char* name);
+void mp_destroy(mp_pool_t *pool);
 void* mp_alloc(mp_pool_t* p);
 void* mp_calloc(mp_pool_t* p);
 void mp_free(mp_pool_t* p,void* d);

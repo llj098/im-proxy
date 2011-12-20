@@ -48,6 +48,18 @@ static inline void __list_add(list_head_t *new,
   __list_add(entry, head, head->next)
 
 
+#define list_remove(entry)			\
+  if((entry)->next == (entry)->prev){		\
+    (entry)->prev = NULL;			\
+    (entry)->next = NULL;			\
+  }						\
+  else{						\
+    (entry)->prev->next= (entry)->next;		\
+    (entry)->next->prev = (entry)->prev;	\
+  }						\
+  
+  
+  
 
 
 #endif
