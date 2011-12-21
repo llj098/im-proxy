@@ -72,6 +72,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
 	/* FIXME:maybe we should try best to accept and 
 	 * delay add events */
+	setnonblocking(f);
 	pxy_agent_t *agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
 	ev_file_item_new(f,agent,pxy_worker_client_rfunc,NULL,EV_READABLE);
       }
@@ -206,7 +207,9 @@ pxy_start()
   master->listen_fd =socket(AF_INET,SOCK_STREAM,0);
   if(master->listen_fd < 0)
     return -1;
-	
+
+  setnonblocking(master->listen_fd);
+
   addr1.sin_family = AF_INET;
   addr1.sin_port = htons(config->client_port);
 	

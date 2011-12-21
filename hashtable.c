@@ -1,4 +1,4 @@
-#include "proxy.h"
+#include "hashtable.h"
 
 int 
 ht_set(ht_table_t* t,uint32_t k,void* v)
@@ -96,7 +96,6 @@ ht_resize_tmp(ht_table_t* t)
   len = len << 1;
 
   if(len<0) {
-    I("Error, Max Length");
     return -1;
   }
 

@@ -2,7 +2,8 @@
 #define _HASHTABLE_H_
 
 #define HT_INIT_SIZE 16
-#include "proxy.h"
+#include "sysinc.h"
+#include "mempool.h"
 
 typedef struct ht_key_s{
   uint32_t hash;
@@ -46,7 +47,7 @@ void* ht_remove(ht_table_t* t,uint32_t k);
   })
 
 
-inline ht_table_t* ht_create()
+static inline ht_table_t* ht_create()
 {
   ht_table_t *t = pxy_calloc(sizeof(*t));
   if(!t)goto failed;
@@ -67,7 +68,7 @@ inline ht_table_t* ht_create()
   return NULL;
 }
 
-inline int ht_init(ht_table_t* t)
+static inline int ht_init(ht_table_t* t)
 {
   if(t == NULL)
     return -1;
@@ -83,54 +84,12 @@ inline int ht_init(ht_table_t* t)
 
 
 /*This algorith comes from google's snappy*/
-inline uint32_t ht_hash_func(uint32_t bytes) 
+static inline uint32_t ht_hash_func(uint32_t bytes) 
 {
   int shift = 5;
   uint32_t kMul = 0x1e35a7bd;
   return (bytes * kMul) >> shift;
 }
 
-
-/* Copyright (C) Austin Appleby */
-uint32_t
-ht_murmur_hash2(u_char *data, size_t len)
-{
-  uint32_t  h, k;
-
-  h = 0 ^ len;
-
-  while (len >= 4) {
-    k  = data[0];
-    k |= data[1] << 8;
-    k |= data[2] << 16;
-    k |= data[3] << 24;
-
-    k *= 0x5bd1e995;
-    k ^= k >> 24;
-    k *= 0x5bd1e995;
-
-    h *= 0x5bd1e995;
-    h ^= k;
-
-    data += 4;
-    len -= 4;
-  }
-
-  switch (len) {
-  case 3:
-    h ^= data[2] << 16;
-  case 2:
-    h ^= data[1] << 8;
-  case 1:
-    h ^= data[0];
-    h *= 0x5bd1e995;
-  }
-
-  h ^= h >> 13;
-  h *= 0x5bd1e995;
-  h ^= h >> 15;
-
-  return h;
-}
 
 #endif 

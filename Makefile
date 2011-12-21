@@ -1,15 +1,28 @@
 
 CC = 	gcc
-CFLAGS =  -I. -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Wunused-function -Wunused-variable -Wunused-value -Werror -g 
-CPP =	gcc -E
+CFLAGS = -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Wunused-variable -Wunused-value -Werror -g 
 LINK =	$(CC)
 
-LIBOBJS = ./mempool.o 	
 
 
-all:
-$(CC) -c $(CFLAGS) proxy.c config.h hashtable.c hashtable.h mempool.c mempool.h ev.h ev.c connection.c connection.h list.h buffer.h agent.h agent.c
+LIB_OBJS = \
+	./mempool.o \
+	./hashtable.o
 
-ht_test:
-$(CC) ht_test.o hashtable.c hashtable.h mempool.c mempool.h list.h buffer.h agent.h agent.c hashtable_test.c
+PXY_OBJS = \
+	./proxy.o \
+	./ev.o 
+
+OUTPUT = proxy
+
+all:  $(LIB_OBJS) $(PXY_OBJS) 
+	$(LINK) $(LIB_OBJS) $(PXY_OBJS) -o $(OUTPUT)
+
+clean:
+	rm -f $(PXY_OBJS)
+	rm -f $(LIB_OBJS)
+	rm -f $(OUTPUT)
+
+ht_test: $(LIB_OBJS)
+	$(CC) ht_test.o hashtable.c hashtable.h mempool.c mempool.h list.h buffer.h agent.h agent.c hashtable_test.c
 

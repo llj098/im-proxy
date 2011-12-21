@@ -1,8 +1,8 @@
 
 /*only for epoll now*/
 
-#include "proxy.h"
-
+#include "ev.h"
+#include "sysinc.h"
 
 ev_t*
 ev_create(void* data)

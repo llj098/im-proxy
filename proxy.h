@@ -41,8 +41,8 @@ typedef struct pxy_master_s{
   mp_pool_t* pool;
 }pxy_master_t;
 
-int 
-setnonblocking(int sock)
+
+static inline int setnonblocking(int sock)
 {
   int opts;
   opts = fcntl(sock,F_GETFL);

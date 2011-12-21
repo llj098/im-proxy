@@ -1,8 +1,6 @@
 #ifndef _EV_H_
 #define _EV_H_
 
-#include "sysinc.h"
-
 #define EV_WRITABLE 1
 #define EV_READABLE 2
 #define EV_ALL 3
