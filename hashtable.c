@@ -19,6 +19,7 @@ ht_set(ht_table_t* t,uint32_t k,void* v)
   if(node) {
     node->key.key = k;
     node->key.hash = ht_hash_func(k);
+    node->data = v;
     pos = node->key.hash % t->len;
     
     if(t->nodes[pos]){/*conflict*/

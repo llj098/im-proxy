@@ -5,7 +5,6 @@
 
 typedef struct buffer_s {
   void *data;
-  ssize_t len;/*data len*/
   list_head_t list;
 }buffer_t;
 

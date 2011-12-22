@@ -60,8 +60,9 @@ pxy_init_worker()
 void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  int i,f,n,readn=0;
+  int iovn,i,f,n,readn=0;
   buffer_t *buffer,*buffer_head = NULL;
+  pxy_agent_t *agent = NULL;
 
   if(fi->fd == master->listen_fd){
     for(i=0;i<100;i++){
@@ -73,7 +74,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 	/* FIXME:maybe we should try best to accept and 
 	 * delay add events */
 	setnonblocking(f);
-	pxy_agent_t *agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
+	agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
 	ev_file_item_new(f,agent,pxy_worker_client_rfunc,NULL,EV_READABLE);
       }
       else{
@@ -83,8 +84,17 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
   }
   else{
 
+    agent = fi->data;
+    if(!agent){
+      E("fd has no agent,ev->data is NULL,close the fd");
+      close(fi->fd);
+      return;
+    }
+
     if( ioctl(fi->fd,FIONREAD,&readn) >0 && readn > 0) {
 
+
+      
       n = readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
 
       struct iovec iov[n];
@@ -122,7 +132,6 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
     }
   }
 }
-
 int 
 pxy_start_worker()
 {
@@ -147,7 +156,7 @@ pxy_start_worker()
     
   return 1;
 
-start_failed:
+ start_failed:
   return -1;
 }
 

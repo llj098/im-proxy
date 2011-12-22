@@ -13,6 +13,12 @@ PXY_OBJS = \
 	./proxy.o \
 	./ev.o 
 
+HT_TEST = \
+	./hashtable_test.o \
+
+TEST = \
+	$(HT_TEST)
+
 OUTPUT = proxy
 
 all:  $(LIB_OBJS) $(PXY_OBJS) 
@@ -22,7 +28,8 @@ clean:
 	rm -f $(PXY_OBJS)
 	rm -f $(LIB_OBJS)
 	rm -f $(OUTPUT)
+	rm -f $(TEST)
 
-ht_test: $(LIB_OBJS)
-	$(CC) ht_test.o hashtable.c hashtable.h mempool.c mempool.h list.h buffer.h agent.h agent.c hashtable_test.c
+ht_test: $(LIB_OBJS) $(HT_TEST)
+	$(LINK) $(LIB_OBJS) $(TEST) -o $@
 
