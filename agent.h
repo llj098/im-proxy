@@ -20,8 +20,9 @@ typedef struct pxy_agent_s{
     __agent->fd = (__fd);				\
     __agent->user_id = (__userid);			\
     __agent->buffer = (__buffer);			\
-    __agent->parse_idx = 0;				\
-    __agent->sent = 0;					\
+    __agent->buf_parsed = 0;				\
+    __agent->buf_offset = 0;				\
+    __agent->buf_sent = 0;				\
     __agent;						\
   })
 

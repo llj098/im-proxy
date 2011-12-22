@@ -60,8 +60,9 @@ pxy_init_worker()
 void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  int iovn,i,f,n,readn=0;
-  buffer_t *buffer,*buffer_head = NULL;
+  int iovn,i = 0,f,existn,readn=0;
+  buffer_t *buffer,*bh = NULL;
+  void *d = NULL;
   pxy_agent_t *agent = NULL;
 
   if(fi->fd == master->listen_fd){
@@ -86,49 +87,57 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
     agent = fi->data;
     if(!agent){
-      E("fd has no agent,ev->data is NULL,close the fd");
+      W("fd has no agent,ev->data is NULL,close the fd");
       close(fi->fd);
       return;
     }
 
     if( ioctl(fi->fd,FIONREAD,&readn) >0 && readn > 0) {
-
-
       
-      n = readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
+      existn = agent->buf_offset % BUFFER_SIZE;
 
-      struct iovec iov[n];
-      buffer_head = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-      buffer_head->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
-      iov[i].iov_base = buffer_head->data;
-      iov[i].iov_len = buffer_head->len;
-      readn -= BUFFER_SIZE;
+      if(existn > 0){
+	iovn = 1;
+	readn -= BUFFER_SIZE - existn;
+      }
 
-      for(i=1; i < n ;i++){
+      iovn += readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
+
+      struct iovec iov[iovn];
+
+      if(existn > 0 && agent->buffer){
+
+	bh = list_entry(&(agent->buffer->list.prev), buffer_t, list);
+	d = (void*)((char*)bh->data + existn);
+
+	iov_init(&(iov[0]), d, BUFFER_SIZE - existn);
+	readn -= BUFFER_SIZE;
+	i = 1;
+      }
+
+      for(; i < iovn ;i++){
 
 	buffer = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-	buffer->len = readn> BUFFER_SIZE ? BUFFER_SIZE : readn;
-	list_append(&buffer->list,&buffer_head->list);
 
-	iov[i].iov_base = buffer->data;
-	iov[i].iov_len = BUFFER_SIZE;
+	if(i == 0){
+	  bh = buffer;
+	}
+	
+	list_append(&buffer->list,&bh->list);
+
+	iov_init(&(iov[i]), buffer->data, BUFFER_SIZE);
 	readn -= BUFFER_SIZE;
       }
       
-      readn = readv(fi->fd,iov,n);
+      readn = readv(fi->fd,iov,iovn);
       if(readn){
 	//handle received data
-	pxy_agent_t *agent = ev->data;
-	if(agent){
-	  if(agent->buffer){
-	    list_append(&buffer_head->list,&agent->buffer->list);
-	  }
+	if(!agent->buffer){
+	  agent->buffer = bh;
 	}
-	else{
-	  E("fd has no agent,ev->data is NULL");
-	  close(fi->fd);
-	}
+	list_append(&bh->list,&agent->buffer->list);
       }
+
     }
   }
 }

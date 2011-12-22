@@ -24,7 +24,7 @@ typedef struct list_head_s{
 /*go back the 'offset' length ,
  *return the address of one entry(container)*/
 #define list_entry(ptr,type,member)					\
-  ( (type*)((char*)(ptr) - (unsign long)&((type*)0)->(member)) )	\
+  (type*)((char*)(ptr) - (unsigned long)&(((type*)0)->member))	\
 
 
 #define list_for_each(iter,head)				\

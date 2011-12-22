@@ -55,4 +55,10 @@ static inline int setnonblocking(int sock)
   return 0;
 }
 
+static inline void iov_init(struct iovec *iov,void *base,int len)
+{
+  iov->iov_base = base;
+  iov->iov_len = len;
+}
+
 #endif

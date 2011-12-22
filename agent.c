@@ -50,6 +50,13 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
 }
 
 
+int 
+pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)
+{
+  return -1;
+}
+
+
 int
 pxy_agent_upstream(pxy_agent_t *agent)
 {
@@ -59,8 +66,8 @@ pxy_agent_upstream(pxy_agent_t *agent)
   int n,p,s,i,writen;
 
   n = 1;
-  p = agent->parse_idx;
-  s = agent->sent;
+  p = agent->buf_parsed;
+  s = agent->buf_sent;
 
 
   while( (p-s) > BUFFER_SIZE){ n++; p -= BUFFER_SIZE;}
