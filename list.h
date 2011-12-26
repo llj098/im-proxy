@@ -12,8 +12,7 @@ typedef struct list_head_s{
 #define LIST_HEAD(x)				\
   struct list_head_s x = { &x,&x } 
 
-#define LIST_HEAD_INIT(x)				\
-  (x) = { &(x),&(x) } 
+#define LIST_HEAD_INIT(x) { &(x),&(x) } 
   
 
 #define INIT_LIST_HEAD(x)			\
@@ -27,8 +26,8 @@ typedef struct list_head_s{
   (type*)((char*)(ptr) - (unsigned long)&(((type*)0)->member))	\
 
 
-#define list_for_each(iter,head)				\
-  for( (iter)=(head)->next ; iter != (head); iter = iter->next)	\
+#define list_for_each(iter,head)					\
+  for( (iter)=(head)->next ; iter != (head) ; iter = iter->next) \
 
 static inline void __list_add(list_head_t *new,
 			      list_head_t *prev,
@@ -42,7 +41,7 @@ static inline void __list_add(list_head_t *new,
 
 
 #define list_append(entry,head)			\
-  __list_add(entry, (head)->prev, (head))		
+  __list_add((entry), (head)->prev, (head))		
 
 #define list_insert(entry,head)			\
   __list_add(entry, head, head->next)
