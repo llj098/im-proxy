@@ -6,6 +6,8 @@
 #define MP_MAX_ALLOC_FROM_POOL  4095
 #define MP_MAX_LIST_COUNT 8
 #define MP_DEFAULT_LIST_LEN     64				   
+#define MALLOC(x) malloc(x)
+#define FREE(x) free(x)
 
 typedef struct mp_pool_s{
   void** freelist;
