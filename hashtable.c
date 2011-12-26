@@ -11,6 +11,7 @@ ht_set(ht_table_t* t,uint32_t k,void* v)
 
   node = ht_get(t,k);
   if(node) {
+    
     return -2;
   }
 

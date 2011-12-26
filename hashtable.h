@@ -17,9 +17,9 @@ typedef struct ht_node_s{
 }ht_node_t;
 
 typedef struct ht_table_s{ 
-  int len;
   int alloced;
   int used;
+  int len;
   ht_node_t **nodes;
   mp_pool_t* pool;
 }ht_table_t;
