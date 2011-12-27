@@ -1,38 +1,47 @@
-#include "hashtable.h"
+#include "proxy.h"
 
 int 
-ht_set(ht_table_t* t,uint32_t k,void* v)
+ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
 {
   if(v == NULL)
     return -1;
 
-  ht_node_t *node;
-  int pos;
+  ht_node_t *node,*n;
+  uint32_t pos,hash;
 
   node = ht_get(t,k);
   if(node) {
-    
-    return -2;
-  }
 
-  node = mp_alloc(t->pool);
+    if(node->data)
+      clean(node->data);
 
-  if(node) {
-    node->key.key = k;
-    node->key.hash = ht_hash_func(k);
     node->data = v;
-    pos = node->key.hash % t->len;
-    
-    if(t->nodes[pos]){/*conflict*/
-      node->next = t->nodes[pos];
-    }
-
-    t->nodes[pos] = node;
     return 1;
   }
-  
-  return -1;
 
+  hash = ht_hash_func(k);
+  pos = hash % t->len;
+  n = (ht_node_t*)(t->nodes)+ pos;
+  
+  if(n->used) { /*conflict*/
+
+    t->alloced++;
+    node = MALLOC(sizeof(*node));
+
+    if(node){
+      ht_node_init(node,hash,k,v);
+      list_append(&(node->list),&(n->list));
+      return 1;
+    }
+
+    return -1;
+  }
+  else{
+    ht_node_init(n,hash,k,v);
+    n->used = 1;
+  }
+ 
+  return 1;
 }
 
 
@@ -43,52 +52,76 @@ ht_get(ht_table_t* t,uint32_t k)
     return NULL;
 
   uint32_t hash,pos;
-  ht_node_t *node;
+  ht_node_t *node,*n;
+  list_head_t *iter;
   
   hash = ht_hash_func(k);
   pos = hash % t->len;
-  node = t->nodes[pos];
+  node = (ht_node_t*)(t->nodes)+pos;
   
-  while(node){
-    if(node->key.key == k)
+  
+  list_for_each(iter,&(node->list)){
+
+    if(k == node->key.key){
       return node->data;
-    else
-      node = node->next;
+    }
+    
+    n = list_entry(iter,ht_node_t,list);
+    if(n && n->key.key == k){
+      return n->data;
+    }
   }
 
   return NULL; 
 }
 
 
-void* 
-ht_remove(ht_table_t* t,uint32_t k)
+void 
+ht_remove(ht_table_t* t,uint32_t k,ht_clean clean)
 {
   if(!t)
-    return NULL;
+    return;
   
   uint32_t hash,pos;
-  ht_node_t *node;
+  ht_node_t *node,*n;
   void *d = NULL;
+  list_head_t *iter;
 
   hash = ht_hash_func(k);
   pos = hash % t->len;
-  node = t->nodes[pos];
+  node = (ht_node_t*)(t->nodes+pos);
   
-  while(node){
-    if(node->key.key == k) {
+  list_for_each(iter,&(node->list)){
+
+    if(k == node->key.key){
+      node->used = 0;
       d = node->data;
-      mp_free(t->pool,node);
+      break;
     }
-    else
-      node = node->next;
+
+    if(iter){
+      n = list_entry(iter,ht_node_t,list);
+
+      if(n && n->key.key ==k){
+	d = n->data;
+	FREE(n);
+	break;
+      }
+    }
+
   }
 
-  return d;
+  if(d){
+    if(clean){ clean(d); }
+    else{ FREE(d); }
+  }
+	
+  return;
 }
 
 
 int 
-ht_resize_tmp(ht_table_t* t)
+ht_resize(ht_table_t* t)
 {
   int len,pos;
   uint32_t hash;
