@@ -57,6 +57,7 @@ ht_node_init(ht_node_t *node,uint32_t hash,uint32_t key,void *d)
   node->key.key = key;
   node->key.hash = hash;
   node->data = d;
+  node->used = 0;
   INIT_LIST_HEAD(&(node->list));
 }
 
@@ -74,8 +75,9 @@ ht_create()
   if(!t->nodes) 
     goto failed;
 
-  for (i=0; i<HT_INIT_SIZE; ++i) {
-    ht_node_init((ht_node_t*)(t->nodes)+i,0,0,NULL);
+  for (i=0; i< HT_INIT_SIZE; ++i) {
+    ht_node_t *node = (ht_node_t*)(t->nodes) + i;
+    ht_node_init(node,0,0,NULL);
   }
   
   return t;
