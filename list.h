@@ -39,6 +39,32 @@ static inline void __list_add(list_head_t *new,
   prev->next = new;
 }
 
+static inline void __list_del(list_head_t *prev,list_head_t *next)
+{
+  prev->next = next;
+  next->prev = prev;
+}
+
+static inline void list_del(list_head_t *head)
+{
+  __list_del(head->prev,head->next);
+  head->prev = (void*)0;
+  head->next = (void*)0;
+}
+
+static inline void list_combine(list_head_t *head,list_head_t *new)
+{
+  head->prev->next = new;
+  new->prev = head->prev;
+}
+
+static inline int list_empty(list_head_t *head)
+{
+  if(head->next == head->prev)
+    return 1;
+  
+  return 0;
+}
 
 #define list_append(entry,head)			\
   __list_add((entry), (head)->prev, (head))		
