@@ -54,7 +54,6 @@ ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
 
 
   if(t->used > t->len*0.7){
-    printf("resized\n");
     if(!ht_resize(t)){
       return -1;
     }
@@ -84,19 +83,6 @@ ht_get(ht_table_t* t,uint32_t k)
     return node->data;
   } 
 
-  if(k==9){
-    printf("!!!!Here\n");
-
-    printf("t->len:%d,hash:%d,pos:%d,k:%d,node:%d,node.p:%d,node.n:%d\n",
-	   t->len,
-	   hash,
-	   pos,
-	   k,
-	   (int)node,
-	   (int)node->list.prev,
-	   (int)node->list.next);
-
-  }
   list_for_each(iter,&(node->list)){
 
     n = list_entry(iter,ht_node_t,list);
