@@ -52,15 +52,18 @@ static inline void list_del(list_head_t *head)
   head->next = (void*)0;
 }
 
-static inline void list_combine(list_head_t *head,list_head_t *new)
+static inline void 
+list_combine(list_head_t *head,list_head_t *new,list_head_t *tail)
 {
-  head->prev->next = new;
-  new->prev = head->prev;
+  tail->next = head;
+  new->prev = head;
+  head->prev = tail;
+  head->next = new;
 }
 
 static inline int list_empty(list_head_t *head)
 {
-  if(head->next == head->prev)
+  if(head->next == head)
     return 1;
   
   return 0;
