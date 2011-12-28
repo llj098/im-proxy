@@ -61,6 +61,14 @@ ht_node_init(ht_node_t *node,uint32_t hash,uint32_t key,void *d)
   INIT_LIST_HEAD(&(node->list));
 }
 
+static inline void 
+ht_renew(ht_table_t *t,ht_node_t **nodes,uint32_t len,int used)
+{
+  t->nodes = nodes;
+  t->len = len;
+  t->used = used;
+}
+
 
 static inline ht_table_t* 
 ht_create()

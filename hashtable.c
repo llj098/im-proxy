@@ -2,33 +2,13 @@
 
 
 int 
-ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
+_ht_set(ht_table_t *t,uint32_t k,void *v)
 {
-  if(v == NULL)
-    return -1;
-
-  ht_node_t *node,*n;
   uint32_t pos,hash;
-
-  node = ht_get(t,k);
-  if(node) {
-
-    if(node->data)
-      clean(node->data);
-
-    node->data = v;
-    return 1;
-  }
-
-
-  if(t->used > t->len*0.7){
-    if(!ht_resize(t)){
-      return -1;
-    }
-  }
-
+  ht_node_t *node,*n;
 
   hash = ht_hash_func(k);
+
   pos = hash % t->len;
   n = (ht_node_t*)(t->nodes)+ pos;
   
@@ -46,7 +26,6 @@ ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
     return -1;
   }
   else{
-
     ht_node_init(n,hash,k,v);
     n->used = 1;
     t->used ++;
@@ -56,10 +35,40 @@ ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
 }
 
 
+int 
+ht_set(ht_table_t* t,uint32_t k,void* v,ht_clean clean)
+{
+  if(v == NULL || k <=0)
+    return -1;
+
+  ht_node_t *node;
+
+  node = ht_get(t,k);
+  if(node) {
+    if(node->data)
+      clean(node->data);
+
+    node->data = v;
+    return 1;
+  }
+
+
+  if(t->used > t->len*0.7){
+    printf("resized\n");
+    if(!ht_resize(t)){
+      return -1;
+    }
+  }
+
+  return _ht_set(t,k,v);
+
+}
+
+
 void* 
 ht_get(ht_table_t* t,uint32_t k)
 { 
-  if(!t)
+  if(!t || k <=0)
     return NULL;
 
   uint32_t hash,pos;
@@ -70,11 +79,24 @@ ht_get(ht_table_t* t,uint32_t k)
   pos = hash % t->len;
   node = (ht_node_t*)(t->nodes)+pos;
   
+
   if(k == node->key.key && node->used){
     return node->data;
   } 
 
-  
+  if(k==9){
+    printf("!!!!Here\n");
+
+    printf("t->len:%d,hash:%d,pos:%d,k:%d,node:%d,node.p:%d,node.n:%d\n",
+	   t->len,
+	   hash,
+	   pos,
+	   k,
+	   (int)node,
+	   (int)node->list.prev,
+	   (int)node->list.next);
+
+  }
   list_for_each(iter,&(node->list)){
 
     n = list_entry(iter,ht_node_t,list);
@@ -139,9 +161,9 @@ ht_remove(ht_table_t* t,uint32_t k,ht_clean clean)
 int 
 ht_resize(ht_table_t* t)
 {
-  int len,pos,i;
-  uint32_t hash;
-  ht_node_t *node,*n,**nn;
+  int oldlen,len,i;
+  ht_node_t *node,**nn,**oldn;
+  list_head_t *iter;
 
   len = t->len << 1;
 
@@ -149,37 +171,32 @@ ht_resize(ht_table_t* t)
     return -1;
   }
 
-  nn = (ht_node_t**)pxy_calloc(len*sizeof(ht_node_t));
+  oldlen = t->len;
+  oldn   = t->nodes;
 
+  nn = pxy_calloc(len*sizeof(ht_node_t));
+  ht_renew(t,nn,len,0);
+  
   for(i=0; i<len; i++) {
     node = (ht_node_t*)nn + i;
     ht_node_init(node,0,0,NULL);
   }
 
   /*recalcute the hash*/
-  for(i=0; i< t->len; i++) {
+  for(i=0; i<oldlen; i++) {
 
-    node = (ht_node_t*)t->nodes + i;
-    hash = node->key.hash;
-    pos = hash % len;
+    node = (ht_node_t*)oldn + i;
+    if(node->key.key > 0)
+      _ht_set(t,node->key.key,node->data);
 
-    n = (ht_node_t*)nn + pos;
-
-    n->key.key = node->key.key;
-    n->key.hash = hash;
-    n->data = node->data;
-
-    if(!list_empty(&(node->list))) { 
-      list_combine(&n->list,node->list.next);
+    list_for_each(iter,&(node->list)){
+      ht_node_t *n = list_entry(iter,ht_node_t,list);
+      _ht_set(t,n->key.key,n->data);
+      FREE(n);
     }
   }
 
-  FREE(t->nodes);
-  t->nodes = nn;
-  t->len = len;
-
-  for(i=0; i< t->len; i++) {
-    node = (ht_node_t*)(t->nodes) + i;
-  }
+  FREE(oldn);
   return 1;
 }
+
