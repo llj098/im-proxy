@@ -246,9 +246,7 @@ int
 main(int len,char** args)
 {
   int s = pxy_start();
-  char st[2];
   printf("%s\n%d","STARTED",s);
-  scanf("%s",st);
 
   return 1;
 }
