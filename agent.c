@@ -12,11 +12,13 @@ pxy_agent_data_received(pxy_agent_t *agent)
    * proto format:
    * 00|len|cmd|content|00
    */
-  
-  if(!agent)
-    return -1;
-  
 
+  int idx;
+  char current;
+
+  if(agent->buf_offset > 0) {
+
+  }
   
   /*
   int idx = agent->parse_idx;
