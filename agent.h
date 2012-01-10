@@ -12,6 +12,12 @@ typedef struct pxy_agent_s{
   ssize_t buf_sent;
 }pxy_agent_t;
 
+typedef struct message_s {
+  uint32_t len;
+  uint32_t cmd;
+  char *body;
+}message_t;
+
 
 #define pxy_agent_new(__pool,__fd,__userid,__buffer)	\
   ({							\

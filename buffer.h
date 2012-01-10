@@ -3,10 +3,19 @@
 
 #include "proxy.h"
 
+
 typedef struct buffer_s {
   void *data;
   list_head_t list;
 }buffer_t;
+
+/*
+typedef struct stream_s {
+  buffer_t *buf;
+  uint32_t size; //buf element size 
+  uint32_t count; //buf element number 
+};
+*/
 
 #define buffer_fetch(pool,datapool)		\
   ({						\
@@ -23,6 +32,8 @@ typedef struct buffer_s {
     mp_free(pool,buf);				\
   })
 
+
+
 #define buffer_read_char(buf,idx)		\
   ({						\
     char * __c;					\
@@ -38,7 +49,27 @@ typedef struct buffer_s {
   })
   
 
+static inline char* 
+buffer_read(buffer_t *buf,uint32_t offset)
+{
+  buffer_t *b = buf;
+  int n,i;
+
+  n = offset / BUFFER_SIZE;
+  i = offset % BUFFER_SIZE;
+
+  while(b != NULL && (n--) >0){
+    b = list_entry(&b->list.next,buffer_t,list);
+  }
   
+  if(b){
+    return (char *)b->data + i;
+  }
+  
+  return 0;
+  
+}
+
 
 #endif
 

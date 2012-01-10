@@ -95,6 +95,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
     if( ioctl(fi->fd,FIONREAD,&readn) >0 && readn > 0) {
       
       existn = agent->buf_offset % BUFFER_SIZE;
+      agent->buf_offset += readn;
 
       if(existn > 0){
 	iovn = 1;

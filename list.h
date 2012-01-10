@@ -25,9 +25,8 @@ typedef struct list_head_s{
 #define list_entry(ptr,type,member)					\
   (type*)((char*)(ptr) - (unsigned long)&(((type*)0)->member))	\
 
-
 #define list_for_each(iter,head)					\
-  for( (iter)=(head)->next ; iter != (head) ; iter = iter->next) \
+  for( (iter)=(head)->next ; iter != (head) ; iter = iter->next)	\
 
 static inline void __list_add(list_head_t *new,
 			      list_head_t *prev,

@@ -13,22 +13,49 @@ pxy_agent_data_received(pxy_agent_t *agent)
    * 00|len|cmd|content|00
    */
 
-  int idx;
-  char current;
+  int idx,n,i = 0;
+  char *c;
+  message_t *m;
 
-  if(agent->buf_offset > 0) {
+  n = agent->buf_offset - agent->sent;
 
+  if(n){
+    idx = agent->sent;
+
+    int cmd,len,s;
+    
+    
+    while((i++ < n) && (c=buffer_read(agent->buffer,idx)) != NULL) {
+      
+      /*parse state machine*/
+      switch(s){
+      case 0:
+	if(*c != 0)
+	  return -1;
+	s++; idx++;
+	break;
+      case  1:
+	len = (int)*c;
+	s++; idx++;
+	break;
+      case  2:
+	cmd = (int)*c;
+	s++; idx += len-3;
+	break;
+      case  3:
+	if(*c !=0)
+	  return -1;
+
+	/*on message parse finish*/
+	s=0; idx++;
+	agent->buf_parsed = idx;
+	break;
+      }
+    }
+
+    pxy_agent_upstream(agent);
   }
-  
-  /*
-  int idx = agent->parse_idx;
-  buffer_t *buffer = agent->buffer;
-  char* c = NULL;
-  
-  if(!buffer)
-    return 0;
-  
-  */
+
   return 0;
 }
 
