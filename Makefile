@@ -13,11 +13,15 @@ PXY_OBJS = \
 	./proxy.o \
 	./ev.o 
 
+PXY_TEST = \
+	./pxy_test.o \
+
 HT_TEST = \
 	./hashtable_test.o \
 
 TEST = \
-	$(HT_TEST)
+	$(PXY_TEST) \
+	$(HT_TEST)  \
 
 OUTPUT = proxy
 
