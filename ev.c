@@ -1,14 +1,13 @@
 
 /*only for epoll now*/
 
-#include "ev.h"
-#include "sysinc.h"
+#include "proxy.h"
 
 ev_t*
 ev_create(void* data)
 {
   ev_t* ev;
-  int fd = epoll_create(1/*kernel hint*/);
+  int fd = epoll_create(1024/*kernel hint*/);
 
   if(fd > 0){
     ev = (ev_t*)malloc(sizeof(ev_t));
@@ -29,7 +28,7 @@ ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item)
 {
   struct epoll_event epev;
 
-  epev.events = item->events;
+  epev.events = item->events | EPOLLET;
   epev.data.fd = item->fd;
   epev.data.ptr = item;
 
@@ -73,17 +72,28 @@ ev_main(ev_t* ev)
 
     int i,j;
     struct epoll_event* e = ev->api_data;
-     
+
     j = epoll_wait(ev->fd,e,EV_COUNT,100);
 
     for(i=0;i<j;i++){
-      ev_file_item_t* fi = (ev_file_item_t*)e[j].data.ptr;
 
-      if((e[j].events) | EPOLLIN)
-	fi->rfunc(ev,fi);
+      ev_file_item_t* fi = (ev_file_item_t*)e[i].data.ptr; 
+
+      if((e[i].events) | EPOLLIN) {
+
+	if(fi->rfunc){
+	  D("RFUNC");
+	  fi->rfunc(ev,fi);
+	}
+      }
     
-      if(e[j].events | EPOLLOUT)
-	fi->wfunc(ev,fi);
+      if(e[i].events | EPOLLOUT){ 
+
+	if(fi->wfunc) {
+	  D("WFUNC");
+	  fi->wfunc(ev,fi);
+	}
+      }
     }
   }
 }

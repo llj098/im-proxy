@@ -18,7 +18,7 @@
   do {								\
     struct timeval __xxts;					\
     gettimeofday(&__xxts,NULL);					\
-    printf("%03d.%06d %s [%d] pid:[%d] " format "\n",		\
+    printf("[DEBUG] %03d.%06d %s L%d P%d " format "\n",		\
 	   (int)__xxts.tv_sec % 1000, (int) __xxts.tv_usec,	\
 	   __FUNCTION__,__LINE__,getpid(),##__VA_ARGS__);	\
   }while(0)							\

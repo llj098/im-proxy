@@ -1,8 +1,8 @@
 #ifndef _EV_H_
 #define _EV_H_
 
-#define EV_WRITABLE 1
-#define EV_READABLE 2
+#define EV_READABLE 1
+#define EV_WRITABLE 2
 #define EV_ALL 3
 
 #define EV_TIME 1
