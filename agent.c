@@ -3,6 +3,8 @@
 
 extern pxy_worker_t *worker;
 
+int pxy_agent_upstream(int ,pxy_agent_t *);
+
 int
 pxy_agent_data_received(pxy_agent_t *agent)
 {
@@ -15,14 +17,13 @@ pxy_agent_data_received(pxy_agent_t *agent)
 
   int idx,n,i = 0;
   char *c;
-  message_t *m;
 
-  n = agent->buf_offset - agent->sent;
+  n = agent->buf_offset - agent->buf_sent;
 
   if(n){
-    idx = agent->sent;
+    idx = agent->buf_sent;
 
-    int cmd,len,s;
+    int cmd = -1,len = 0,s = 0;
     
     
     while((i++ < n) && (c=buffer_read(agent->buffer,idx)) != NULL) {
@@ -53,7 +54,7 @@ pxy_agent_data_received(pxy_agent_t *agent)
       }
     }
 
-    pxy_agent_upstream(agent);
+    pxy_agent_upstream(cmd,agent);
   }
 
   return 0;
@@ -87,7 +88,7 @@ pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)
 
 
 int
-pxy_agent_upstream(pxy_agent_t *agent)
+pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 {
   if(!agent)
     return -1;

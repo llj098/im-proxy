@@ -11,7 +11,8 @@ LIB_OBJS = \
 
 PXY_OBJS = \
 	./proxy.o \
-	./ev.o 
+	./ev.o \
+	./agent.o \
 
 PXY_TEST = \
 	./pxy_test.o \

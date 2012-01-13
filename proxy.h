@@ -1,12 +1,9 @@
 #ifndef _PROXY_H_
 #define _PROXY_H_
-#define I(x) printf("INFO:%s\n",x)
-#define W(x) printf("WARN:%s\n",x)
-#define E(x) printf("ERROR:%s\n",x)
+
 #define MAX_EVENTS 1000
 #define BUFFER_SIZE 1460
 #define pxy_memzero(buf, n)       (void) memset(buf, 0, n)
-
 
 #include "sysinc.h"
 #include "ev.h"
@@ -16,6 +13,19 @@
 #include "mempool.h"
 #include "hashtable.h"
 #include "agent.h"
+
+#define D(format,...)						\
+  do {								\
+    struct timeval __xxts;					\
+    gettimeofday(&__xxts,NULL);					\
+    printf("%03d.%06d %s [%d] pid:[%d] " format "\n",		\
+	   (int)__xxts.tv_sec % 1000, (int) __xxts.tv_usec,	\
+	   __FUNCTION__,__LINE__,getpid(),##__VA_ARGS__);	\
+  }while(0)							\
+
+#define I(x) printf("INFO:%s\n",x)
+#define W(x) printf("WARN:%s\n",x)
+#define E(x) printf("ERROR:%s\n",x)
 
 typedef struct pxy_config_s{
   short client_port;
