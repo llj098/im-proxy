@@ -22,11 +22,17 @@ typedef struct list_head_s{
 
 /*go back the 'offset' length ,
  *return the address of one entry(container)*/
-#define list_entry(ptr,type,member)					\
+#define list_entry(ptr,type,member)				\
   (type*)((char*)(ptr) - (unsigned long)&(((type*)0)->member))	\
 
 #define list_for_each(iter,head)					\
   for( (iter)=(head)->next ; iter != (head) ; iter = iter->next)	\
+
+#define list_for_each_entry(iter,member,head)				\
+  for( iter = list_entry((head)->next,typeof(*iter),member) ;		\
+	&iter->member != (head) ;					\
+       iter = list_entry(iter->member.next,typeof(*iter),member))	\
+
 
 static inline void __list_add(list_head_t *new,
 			      list_head_t *prev,
