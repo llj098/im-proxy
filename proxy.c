@@ -82,7 +82,6 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
     if(readn > 0) {
       existn = agent->buf_offset % BUFFER_SIZE;
-      agent->buf_offset += readn;
 
       if(existn > 0){
 	iovn = 1;
@@ -91,7 +90,6 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
       iovn += readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
       struct iovec iov[iovn];
-
       D("existn:%d,agent->buf_offset:%d,iovn:%d",existn,agent->buf_offset,iovn);
 
       if(existn > 0 && agent->buffer){
@@ -120,15 +118,15 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
       
       readn = readv(fi->fd,iov,iovn);
       D("readv returns :%d",readn);
-      if(readn){
-	//handle received data
-	if(!agent->buffer){
-	  agent->buffer = bh;
-	}
+      if(readn > 0){
+
+	if(!agent->buffer){ agent->buffer = bh; }
 	list_append(&bh->list,&agent->buffer->list);
 
+	agent->buf_offset += readn;
+
+	D("Call echo test");
 	/*if(pxy_agent_data_received(agent) < 0){*/
-	
 	if(pxy_agent_echo_test(agent) < 0){
 	  pxy_agent_close(agent);
 	}

@@ -35,6 +35,8 @@ typedef struct stream_s {
 #define buffer_for_each(b,blist)		\
   list_for_each_entry(b,list,&(blist)->list)	\
 
+#define buffer_next(b)				\
+  list_entry(&(b)->list.next,buffer_t,list)	\
 
 #define buffer_read_char(buf,idx)		\
   ({						\
@@ -71,7 +73,6 @@ buffer_read(buffer_t *buf,uint32_t offset)
   return 0;
   
 }
-
 
 #endif
 
