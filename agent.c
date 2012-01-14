@@ -3,7 +3,6 @@
 
 extern pxy_worker_t *worker;
 
-int pxy_agent_upstream(int ,pxy_agent_t *);
 
 int
 pxy_agent_data_received(pxy_agent_t *agent)
@@ -79,6 +78,28 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
   return rn;
 }
 
+void 
+pxy_agent_close(pxy_agent_t *agent)
+{
+  buffer_t *b;
+
+  if(agent->fd) close(agent->fd);
+
+  if(agent->buffer) {
+    buffer_for_each(b,agent->buffer){
+      if(b){
+	if(b->data){
+	  mp_free(worker->buf_data_pool,b->data);
+	}
+	mp_free(worker->buf_pool,b);
+      }
+    }
+
+    mp_free(worker->buf_pool,agent->buffer);
+  }
+
+  mp_free(worker->agent_pool,agent);
+}
 
 int 
 pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)

@@ -3,6 +3,7 @@
 
 #include "proxy.h"
 
+
 typedef struct pxy_agent_s{
   struct buffer_s *buffer;
   int fd;
@@ -18,6 +19,9 @@ typedef struct message_s {
   char *body;
 }message_t;
 
+void pxy_agent_close(pxy_agent_t *);
+int pxy_agent_data_received(pxy_agent_t *);
+int pxy_agent_upstream(int ,pxy_agent_t *);
 
 #define pxy_agent_new(__pool,__fd,__userid,__buffer)	\
   ({							\
