@@ -3,6 +3,83 @@
 
 extern pxy_worker_t *worker;
 
+int
+pxy_agent_downstream(pxy_agent_t *agent)
+{
+  int n,p,s,i,writen;
+
+  n = 1;
+  p = agent->buf_parsed;
+  s = agent->buf_sent;
+
+
+  while( (p-s) > BUFFER_SIZE){ n++; p -= BUFFER_SIZE;}
+
+  struct iovec iov[n];
+  
+  for(i=0;i<n;i++){
+
+    if(i == 0){
+
+      iov[i].iov_base = ((char *)(agent->buffer->data))+ p;
+      iov[i].iov_len = BUFFER_SIZE - p;
+      
+      continue;
+    }
+
+    if(i == n){
+
+      iov[i].iov_base = agent->buffer->data;
+      iov[i].iov_len = p % BUFFER_SIZE;
+      
+      continue;
+    }
+    
+    iov[i].iov_base = agent->buffer->data;
+    iov[i].iov_len = BUFFER_SIZE;
+  }
+  
+  writen = writev(agent->fd,iov,n);
+  
+  if(writen > 0){
+    pxy_agent_buffer_recycle(agent,writen);
+  }
+
+  return writen;
+} 
+
+int 
+pxy_agent_echo_test(pxy_agent_t *agent)
+{
+  int idx,n,i = 0;
+  char *c;
+
+  n = agent->buf_offset - agent->buf_sent;
+
+  if(n){ 
+    idx = agent->buf_sent;
+    while((i++ < n) && (c=buffer_read(agent->buffer,idx)) != NULL) {
+     
+      if(*c == 'z' && (i + 2) <= n) {
+	
+	char *c1 = buffer_read(agent->buffer,idx+1);
+	char *c2 = buffer_read(agent->buffer,idx+2);
+
+	if(*c1 == '\r' && *c2 =='\n'){
+	  agent->buf_parsed = idx+2;
+	  i+=2;
+	}
+      }
+    }
+
+    if(pxy_agent_downstream(agent) < 0){
+      pxy_agent_close(agent);
+    }
+  }
+
+  return 0;
+}
+
 
 int
 pxy_agent_data_received(pxy_agent_t *agent)

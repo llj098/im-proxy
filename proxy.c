@@ -126,9 +126,13 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 	  agent->buffer = bh;
 	}
 	list_append(&bh->list,&agent->buffer->list);
-	if(pxy_agent_data_received(agent) < 0){
+
+	/*if(pxy_agent_data_received(agent) < 0){*/
+	
+	if(pxy_agent_echo_test(agent) < 0){
 	  pxy_agent_close(agent);
 	}
+
       }
     }
   }

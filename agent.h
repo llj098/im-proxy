@@ -22,6 +22,8 @@ typedef struct message_s {
 void pxy_agent_close(pxy_agent_t *);
 int pxy_agent_data_received(pxy_agent_t *);
 int pxy_agent_upstream(int ,pxy_agent_t *);
+int pxy_agent_echo_test(pxy_agent_t *);
+int pxy_agent_buffer_recycle(pxy_agent_t *,int);
 
 #define pxy_agent_new(__pool,__fd,__userid,__buffer)	\
   ({							\

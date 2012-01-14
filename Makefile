@@ -6,12 +6,12 @@ LINK =	$(CC)
 
 
 LIB_OBJS = \
+	./ev.o \
 	./mempool.o \
 	./hashtable.o
 
 PXY_OBJS = \
 	./proxy.o \
-	./ev.o \
 	./agent.o \
 
 PXY_TEST = \
