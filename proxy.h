@@ -34,21 +34,24 @@ typedef struct pxy_config_s{
 }pxy_config_t;
 
 typedef struct pxy_worker_s{
-  int connection_n;
   int bfd;
-  struct sockaddr_in *baddr;
   ev_t* ev;
+  int connection_n;
+  pid_t pid;
   //ht_table_t* conns;
   mp_pool_t *buf_pool;
   mp_pool_t *buf_data_pool;
   mp_pool_t *agent_pool;
+  struct sockaddr_in *baddr;
+  int socket_pair[2];
 }pxy_worker_t;
 
 typedef struct pxy_master_s{
-  pxy_config_t* config;
   int listen_fd;
-  struct sockaddr addr;
   mp_pool_t* pool;
+  pxy_config_t* config;
+  struct sockaddr addr;
+  pxy_worker_t **workers;
 }pxy_master_t;
 
 

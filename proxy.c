@@ -193,37 +193,46 @@ pxy_init_worker()
   return -1;
 }
 
-
 int 
-pxy_init_master()
+pxy_start_listen()
 {
   int s;
   struct sockaddr_in addr1;
 
+  master->listen_fd =socket(AF_INET,SOCK_STREAM,0);
+  if(master->listen_fd < 0)
+    return -1;
+
+  setnonblocking(master->listen_fd);
+
+  addr1.sin_family = AF_INET;
+  addr1.sin_port = htons(config->client_port);
+  addr1.sin_addr.s_addr = 0;
+	
+  s = bind(master->listen_fd, (struct sockaddr*)&addr1, sizeof(addr1));
+
+  if(s < 0){
+    D("bind error");
+    return -1;
+  }
+
+  if(listen(master->listen_fd,1000) < 0)
+    return -1;
+    
+  return 0;
+}
+
+int 
+pxy_init_master()
+{
   if(pxy_init_config()){
     
     master = (pxy_master_t*)malloc(sizeof(*master));
     master->config = config;
+    master-> workers = 
+      (pxy_worker_t**)malloc(config->worker_count * sizeof(pxy_worker_t));
 
-    master->listen_fd =socket(AF_INET,SOCK_STREAM,0);
-    if(master->listen_fd < 0)
-      return -1;
-
-    setnonblocking(master->listen_fd);
-
-    addr1.sin_family = AF_INET;
-    addr1.sin_port = htons(config->client_port);
-    addr1.sin_addr.s_addr = 0;
-	
-    s = bind(master->listen_fd, (struct sockaddr*)&addr1, sizeof(addr1));
-
-    if(s < 0){
-      D("bind error");
-      return -1;
-    }
-
-    if(listen(master->listen_fd,1000) < 0)
-      return -1;
+    return pxy_start_listen();
   }
  
   return -1;
@@ -236,6 +245,7 @@ main(int len,char** args)
   /* char p[80]; */
   int s,i=0;
   char ch[80];
+  pxy_worker_t *w;
 
   s = pxy_init_master();
 
@@ -248,7 +258,22 @@ main(int len,char** args)
   /*spawn worker*/
 
   for(;i<config->worker_count;i++){
+  
+    w = (pxy_worker_t*)(master->workers + i);
 
+    if(socketpair(AF_UNIX,SOCK_STREAM,0,w->socket_pair) < 0) {
+      D("create socket pair error");
+      continue;
+    }
+
+    if(setnonblocking(w->socket_pair[0]) < 0) {
+      D("setnonblocking error fd:#%d",w->socket_pair[0]);
+    }
+ 
+    if(setnonblocking(w->socket_pair[1]) < 0) {
+      D("setnonblocking error fd:#%d",w->socket_pair[1]);
+    }
+    
     pid_t p = fork();
 
     if(p < 0) {
@@ -258,6 +283,13 @@ main(int len,char** args)
 
       if(pxy_init_worker()){
 	D("worker #%d initialized success", getpid());
+	
+	close (w->socket_pair[0]);
+	ev_file_item_new(w->socket_pair[1],
+			 worker,
+			 NULL, /*TODO: rfunt*/
+			 NULL,
+			 EV_READABLE);
 
 	if(pxy_start_worker()) 
 	  D("worker #%d started success", getpid());
@@ -269,14 +301,11 @@ main(int len,char** args)
       }
     }
     else{/*parent*/
-      /*I("%d\n",getpid());*/
+      w->pid = p;
     }
   }
 
-  while(scanf("%s",ch) >= 0 && strcmp(ch,"quit") !=0){
 
-    
-  }
-
+  while(scanf("%s",ch) >= 0 && strcmp(ch,"quit") !=0){ }
   return 1;
 }

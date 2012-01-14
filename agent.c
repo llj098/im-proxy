@@ -221,7 +221,7 @@ pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)
 int
 pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 {
-  retun pxy_agent_send(agent,worker->bfd);
+  return pxy_agent_send(agent,worker->bfd);
 }
 
 
