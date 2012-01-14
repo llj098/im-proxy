@@ -32,6 +32,8 @@ typedef struct stream_s {
     mp_free(pool,buf);				\
   })
 
+#define buffer_for_each(b,blist)		\
+  list_for_each_entry(b,list,&(blist)->list)	\
 
 
 #define buffer_read_char(buf,idx)		\
