@@ -54,6 +54,12 @@ typedef struct pxy_master_s{
   pxy_worker_t **workers;
 }pxy_master_t;
 
+typedef struct pxy_command_s{
+  #define PXY_CMD_QUIT 1
+  pid_t pid;
+  int cmd;
+  int fd;
+}pxy_command_t;
 
 static inline int setnonblocking(int sock)
 {

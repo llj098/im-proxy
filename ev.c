@@ -31,8 +31,9 @@ ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item)
   epev.events = item->events | EPOLLET;
   epev.data.fd = item->fd;
   epev.data.ptr = item;
-
-  return epoll_ctl(ev->fd, op, item->fd, &epev);
+  
+  int i = epoll_ctl(ev->fd, op, item->fd, &epev);
+  return i;
 }
 
 int 
@@ -53,7 +54,8 @@ ev_time_item_ctl(ev_t* ev,int op,ev_time_item_t* item)
 void
 ev_main(ev_t* ev)
 {
-  while(!ev->stop){
+  D("ev_main started");
+  while(ev->stop <= 0){
 
     if(ev->ti){
 
@@ -95,5 +97,8 @@ ev_main(ev_t* ev)
 	}
       }
     }
-  }
+
+  } /*while*/
+
+  D("worker EV_MAIN stopped");
 }
