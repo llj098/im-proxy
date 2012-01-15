@@ -23,12 +23,9 @@ mp_create(int size,int max,char* name)
   return p;
 }
 
-void
-mp_destroy(mp_pool_t *pool)
-{
-  /*TODO:implementation*/
-  
-}
+/*TODO:implementation 
+void mp_destroy(mp_pool_t *pool) { }
+*/
 
 
 void*

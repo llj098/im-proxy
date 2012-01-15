@@ -1,6 +1,6 @@
 
 CC = 	gcc
-CFLAGS = -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Wunused-function -Wunused-variable -Wunused-value -Werror  -g 
+CFLAGS = -pipe  -O -W -Wall -Wno-unused-parameter -g
 LINK =	$(CC)
 
 
