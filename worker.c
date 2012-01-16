@@ -132,9 +132,8 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
   }
 }
 
-
 void
-worker_recv_client(ev_t* ev,ev_file_item_t* fi)
+worker_recv_client(ev_t *ev,ev_file_item_t *fi)
 {
   int iovn=0,i=0,existn=0,readn=0;
   buffer_t *buffer,*bh = NULL;

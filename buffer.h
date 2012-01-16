@@ -38,6 +38,9 @@ typedef struct stream_s {
 #define buffer_next(b)				\
   list_entry(&(b)->list.next,buffer_t,list)	\
 
+#define buffer_append(b,buffer)			\
+  list_append(&b->list,&buffer->list)		\
+
 #define buffer_read_char(buf,idx)		\
   ({						\
     char * __c;					\

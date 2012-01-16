@@ -230,7 +230,7 @@ pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 }
 
 
-pxy_agent_t*
+pxy_agent_t *
 pxy_agent_new(mp_pool_t *pool,int fd,int userid)
 {
   pxy_agent_t *agent = mp_alloc(pool);
@@ -251,11 +251,72 @@ pxy_agent_new(mp_pool_t *pool,int fd,int userid)
   agent->buf_sent   = 0;
   agent->buf_parsed = 0;
   agent->buf_offset = 0;
+  agent->buf_list_n = 0;
 
   return agent;
+
  failed:
   if(agent){
     mp_free(worker->agent_pool,agent);
   }
   return NULL;
 }
+
+void
+agent_recv_client(ev_t *ev,ev_file_item_t *fi)
+{
+  int n;
+  buffer_t *b;
+  pxy_agent_t *agent = fi->data;
+
+  if(!agent){
+    W("fd has no agent,ev->data is NULL,close the fd");
+    close(fi->fd); return;
+  }
+
+  while(1) {
+
+    b = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
+    if(!b) {
+      D("no buf available"); return;
+    }
+
+    buffer_append(b,agent->buffer);
+
+
+    n = recv(fi->fd,b,BUFFER_SIZE,0);
+
+    if(n < 0){
+      if(errno == EAGAIN || errno == EWOULDBLOCK) {
+	break;
+      }
+     else {
+	D("read error,errno is %d",errno);
+	goto failed;
+      }
+    }
+
+    if(n == 0){
+      D("socket fd #%d closed by peer",fi->fd);
+	goto failed;
+    }
+
+    if(n < BUFFER_SIZE) {
+      break;
+    }
+  }
+
+  if(pxy_agent_echo_test(agent) < 0){
+    pxy_agent_close(agent);
+  }
+
+ failed:
+  if(b) {
+    buffer_release(b,worker->buf_pool,worker->buf_data_pool);
+  }
+
+  pxy_agent_close(agent);
+  pxy_agent_remove(agent);
+  return;
+}
+
