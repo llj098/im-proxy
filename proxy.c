@@ -29,6 +29,7 @@ pxy_worker_master_rfunc(ev_t *ev, ev_file_item_t *fi)
 {
   /* only for quit now */
   ev->stop = 1;
+  
 }
 
 void
@@ -322,16 +323,15 @@ main(int len,char** args)
     w = (pxy_worker_t*)(master->workers + i);
 
     if(socketpair(AF_UNIX,SOCK_STREAM,0,w->socket_pair) < 0) {
-      D("create socket pair error");
-      continue;
+      D("create socket pair error"); continue;
     }
 
     if(setnonblocking(w->socket_pair[0]) < 0) {
-      D("setnonblocking error fd:#%d",w->socket_pair[0]);
+      D("setnonblocking error fd:#%d",w->socket_pair[0]); continue;
     }
  
     if(setnonblocking(w->socket_pair[1]) < 0) {
-      D("setnonblocking error fd:#%d",w->socket_pair[1]);
+      D("setnonblocking error fd:#%d",w->socket_pair[1]); continue;
     }
     
     pid_t p = fork();
@@ -370,6 +370,7 @@ main(int len,char** args)
       w->pid = p;
       close(w->socket_pair[1]); /*parent close the pair[1]*/
     }
+
   }
 
 
