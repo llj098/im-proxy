@@ -11,6 +11,7 @@ LIB_OBJS = \
 	./hashtable.o
 
 PXY_OBJS = \
+	./worker.o \
 	./proxy.o \
 	./agent.o \
 

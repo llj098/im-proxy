@@ -61,6 +61,14 @@ typedef struct pxy_command_s{
   int fd;
 }pxy_command_t;
 
+
+int worker_init();
+int worker_start();
+int worker_close();
+void worker_accept(ev_t*,ev_file_item_t*);
+void worker_recv_client(ev_t*,ev_file_item_t*);
+void worker_recv_cmd(ev_t*,ev_file_item_t*);
+
 static inline int setnonblocking(int sock)
 {
   int opts;
