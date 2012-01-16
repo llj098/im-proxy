@@ -11,6 +11,7 @@ typedef struct pxy_agent_s{
   ssize_t buf_offset;/*all data len in buf*/
   ssize_t buf_parsed;
   ssize_t buf_sent;
+  list_head_t list;
 }pxy_agent_t;
 
 typedef struct message_s {
@@ -38,7 +39,13 @@ int pxy_agent_buffer_recycle(pxy_agent_t *,int);
     __agent;						\
   })
 
+#define pxy_agent_for_each(agent,alist)			\
+  list_for_each_entry((agent),list,&(alist)->list)	
 
+#define pxy_agent_append(agent,alist)		\
+  list_append(&(agent)->list,&(alist)->list)		
 
+#define pxy_agent_remove(agent)			\
+  list_remove(&(agent)->list)
 
 #endif

@@ -2,7 +2,7 @@
 #define _PROXY_H_
 
 #define MAX_EVENTS 1000
-#define BUFFER_SIZE 1460
+#define BUFFER_SIZE 20
 #define pxy_memzero(buf, n)       (void) memset(buf, 0, n)
 
 #include "sysinc.h"
@@ -38,7 +38,7 @@ typedef struct pxy_worker_s{
   ev_t* ev;
   int connection_n;
   pid_t pid;
-  //ht_table_t* conns;
+  pxy_agent_t *agents;
   mp_pool_t *buf_pool;
   mp_pool_t *buf_data_pool;
   mp_pool_t *agent_pool;
