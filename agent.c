@@ -230,6 +230,32 @@ pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 }
 
 
+pxy_agent_t*
+pxy_agent_new(mp_pool_t *pool,int fd,int userid)
+{
+  pxy_agent_t *agent = mp_alloc(pool);
+  if(!agent){
+    D("no mempry for agent"); 
+    goto failed;
+  }
 
+  agent->buffer = mp_alloc(worker->buf_pool);
+  if(!agent->buffer) {
+    D("no memory for buffer");
+    goto failed;
+  }
+  INIT_LIST_HEAD(&(agent->buffer->list));
 
+  agent->fd         = fd;
+  agent->user_id    = userid;
+  agent->buf_sent   = 0;
+  agent->buf_parsed = 0;
+  agent->buf_offset = 0;
 
+  return agent;
+ failed:
+  if(agent){
+    mp_free(worker->agent_pool,agent);
+  }
+  return NULL;
+}

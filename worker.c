@@ -95,8 +95,8 @@ worker_close()
 void
 worker_accept(ev_t *ev, ev_file_item_t *ffi)
 {
-  int i=0,f,err;
-  pxy_agent_t *agent = NULL;
+  int i,f,err;
+  pxy_agent_t *agent;
   ev_file_item_t *fi;
   
   for(i=0;i<100;i++){
@@ -114,7 +114,7 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
 	D("set nonblocking error"); return;
       }
 
-      agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
+      agent = pxy_agent_new(worker->agent_pool,f,0);
       if(!agent){
 	D("create new agent error"); return;
       }
