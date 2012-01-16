@@ -24,18 +24,31 @@ pxy_init_config()
   return -1;
 }
 
+
+void 
+pxy_worker_close()
+{
+  /*TODO: close all the agent*/
+  pxy_agent_t *a;
+  worker->ev->stop = 1;
+  pxy_agent_for_each(a,worker->agents){
+    pxy_agent_close(a);
+  }
+}
+
+
 void 
 pxy_worker_master_rfunc(ev_t *ev, ev_file_item_t *fi)
 {
   /* only for quit now */
-  ev->stop = 1;
+  pxy_worker_close();
 }
 
 void
 pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 {
-  D("func fired!");
-  int iovn=0,i=0,existn=0,readn=0,f;
+  D("rfunc fired!");
+  int iovn=0,i=0,existn=0,readn=0,f,err;
   buffer_t *buffer,*bh = NULL;
   void *d = NULL;
   pxy_agent_t *agent = NULL;
@@ -50,25 +63,27 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
       if(f>0){
 	/* FIXME:maybe we should try best to accept and 
 	 * delay add events */
-	setnonblocking(f);
-	D("SET NON BLOCKING");
+	err = setnonblocking(f);
+	if(err < 0){
+	  D("set nonblocking error"); return;
+	}
+
 	agent = pxy_agent_new(worker->agent_pool,f,0,NULL);
-	D("NEW AGENT");
+	if(!agent){
+	  D("create new agent error"); return;
+	}
+	pxy_agent_append(agent,worker->agents);
 
 	ev_file_item_t *fi = ev_file_item_new(f,
 					      agent,
 					      pxy_worker_client_rfunc,
 					      NULL,
 					      EV_READABLE);
+	if(!fi){
+	  D("create file item error");
+	}
 
-	if(fi){
-	  ev_file_item_ctl(worker->ev,EV_CTL_ADD,fi);
-	  D("new file item");
-	}
-	else {
-	  D("file ev item is null");
-	}
-	
+	ev_file_item_ctl(worker->ev,EV_CTL_ADD,fi);
       }
       else{
 	break;
@@ -92,7 +107,7 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
       if(existn > 0){
 	iovn = 1;
-	readn -= BUFFER_SIZE - existn;
+	readn -= (BUFFER_SIZE - existn);
       }
 
       iovn += readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
@@ -132,7 +147,6 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
 
 	agent->buf_offset += readn;
 
-	D("Call echo test");
 	/*if(pxy_agent_data_received(agent) < 0){*/
 	if(pxy_agent_echo_test(agent) < 0){
 	  pxy_agent_close(agent);
@@ -143,6 +157,16 @@ pxy_worker_client_rfunc(ev_t* ev,ev_file_item_t* fi)
   }
 }
 
+void
+pxy_master_close()
+{
+  if(master->listen_fd > 0){
+    D("close the listen fd");
+    close(master->listen_fd);
+  }
+  
+  /* TODO: Destroy the mempool */
+}
 
 int 
 pxy_start_worker()
@@ -178,22 +202,40 @@ pxy_start_worker()
   return -1;
 }
 
-
 int 
 pxy_init_worker()
 {
   worker = (pxy_worker_t*)malloc(sizeof(*worker));
   if(worker) {
-    worker->ev = ev_create();
-    worker->agent_pool = mp_create(sizeof(pxy_agent_t),0,"AgentPool");
-    worker->buf_data_pool = mp_create(BUFFER_SIZE,0,"BufDataPool");
-    worker->buf_pool = mp_create(sizeof(buffer_t),0,"BufPool");
-    
 
-    if(worker->ev != NULL)
-      return 1;
-    else
-      return -1;
+  
+    worker->ev = ev_create();
+    if(!worker->ev){
+      D("create ev error"); return -1;
+    }
+
+    worker->agent_pool = mp_create(sizeof(pxy_agent_t),0,"AgentPool");
+    if(!worker->agent_pool){
+      D("create agent_pool error"); return -1;
+    }
+
+    worker->buf_data_pool = mp_create(BUFFER_SIZE,0,"BufDataPool");
+    if(!worker->buf_data_pool){
+      D("create buf_data_pool error"); return -1;
+    }
+
+    worker->buf_pool = mp_create(sizeof(buffer_t),0,"BufPool");
+    if(!worker->buf_pool) {
+      D("create buf_pool error"); return -1;
+    }
+    
+    worker->agents = mp_alloc(worker->agent_pool);
+    if(!worker->agents){
+      D("create agents error"); return -1;
+    }
+
+    INIT_LIST_HEAD(&(worker->agents->list));
+    return 0;
   }
 
   return -1;
@@ -202,7 +244,6 @@ pxy_init_worker()
 int
 pxy_send_command(pxy_worker_t *w,int cmd,int fd)
 {
-  D("F");
   struct msghdr m;
   struct iovec iov[1];
   pxy_command_t *c = malloc(sizeof(*c));
@@ -214,9 +255,7 @@ pxy_send_command(pxy_worker_t *w,int cmd,int fd)
 
   c->cmd = cmd;
   c->fd = fd;
-  D("F,%p",w);
   c->pid = w->pid;
-  D("F");
 
   iov[0].iov_base = c;
   iov[0].iov_len = sizeof(*c);
@@ -229,14 +268,12 @@ pxy_send_command(pxy_worker_t *w,int cmd,int fd)
   m.msg_iov = iov;
   m.msg_iovlen = 1;
 
-  D("F %d",w->socket_pair[0]);
   int a;
   if((a=sendmsg(w->socket_pair[0],&m,0)) < 0) {
     D("send failed%d",a);
     return  -1 ;
   }
 
-  D("F");
   D("master sent cmd:%d to pid:%d fd:%d", cmd, w->pid, fd);
   return 0;
 }
@@ -374,10 +411,12 @@ main(int len,char** args)
 
 
   while(scanf("%s",ch) >= 0 && strcmp(ch,"quit") !=0){ 
-    w = (pxy_worker_t*)master->workers;
-    pxy_send_command(w,PXY_CMD_QUIT,-1);
   }
 
+  w = (pxy_worker_t*)master->workers;
+  pxy_send_command(w,PXY_CMD_QUIT,-1);
 
+  sleep(5);
+  pxy_master_close();
   return 1;
 }

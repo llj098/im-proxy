@@ -72,8 +72,8 @@ pxy_agent_downstream(pxy_agent_t *agent)
 int 
 pxy_agent_echo_test(pxy_agent_t *agent)
 {
-  int idx,n,i = 0;
   char *c;
+  int idx,n,i = 0;
 
   n = agent->buf_offset - agent->buf_sent;
   D("n is :%d", n);
@@ -82,20 +82,19 @@ pxy_agent_echo_test(pxy_agent_t *agent)
     idx = agent->buf_sent;
     while((i++ < n) && (c=buffer_read(agent->buffer,idx)) != NULL) {
      
-      D("c is %c",*c);
       if(*c == 'z' && (i + 2) <= n) {
 	
 	char *c1 = buffer_read(agent->buffer,idx+1);
 	char *c2 = buffer_read(agent->buffer,idx+2);
 
 	if(*c1 == '\r' && *c2 =='\n'){
-	  agent->buf_parsed = idx+2;
+	  agent->buf_parsed = idx+2+1;
 	  i+=2; idx+=2;
 	}
       }
 
       idx++;
-    }
+   }
     
     D("the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
       agent->buf_offset,
@@ -103,6 +102,7 @@ pxy_agent_echo_test(pxy_agent_t *agent)
       agent->buf_parsed);
       
     if(pxy_agent_downstream(agent) < 0){
+      pxy_agent_remove(agent);
       pxy_agent_close(agent);
     }
   }
@@ -191,9 +191,14 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
 void 
 pxy_agent_close(pxy_agent_t *agent)
 {
+  D("pxy_agent_close fired");
   buffer_t *b;
 
-  if(agent->fd) close(agent->fd);
+  if(agent->fd > 0){
+    /* close(agent->fd); */
+    D("shutdown the socket");
+    shutdown(agent->fd,SHUT_RDWR);
+  }
 
   if(agent->buffer) {
     buffer_for_each(b,agent->buffer){

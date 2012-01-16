@@ -78,7 +78,7 @@ static inline int list_empty(list_head_t *head)
   __list_add((entry), (head)->prev, (head))		
 
 #define list_insert(entry,head)			\
-  __list_add(entry, head, head->next)
+  __list_add((entry), (head), (head)->next)
 
 
 #define list_remove(entry)			\
