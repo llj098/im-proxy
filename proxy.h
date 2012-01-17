@@ -5,15 +5,6 @@
 #define BUFFER_SIZE 20
 #define pxy_memzero(buf, n)       (void) memset(buf, 0, n)
 
-#include "sysinc.h"
-#include "ev.h"
-#include "list.h"
-#include "buffer.h"
-#include "config.h"
-#include "mempool.h"
-#include "hashtable.h"
-#include "agent.h"
-
 #define D(format,...)						\
   do {								\
     struct timeval __xxts;					\
@@ -26,6 +17,15 @@
 #define I(x) printf("INFO:%s\n",x)
 #define W(x) printf("WARN:%s\n",x)
 #define E(x) printf("ERROR:%s\n",x)
+
+#include "sysinc.h"
+#include "ev.h"
+#include "list.h"
+#include "buffer.h"
+#include "config.h"
+#include "mempool.h"
+#include "hashtable.h"
+#include "agent.h"
 
 typedef struct pxy_config_s{
   short client_port;

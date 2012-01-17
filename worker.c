@@ -119,7 +119,7 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
 	D("create new agent error"); return;
       }
 
-      fi = ev_file_item_new(f, agent, worker_recv_client, NULL, EV_READABLE);
+      fi = ev_file_item_new(f, agent, agent_recv_client, NULL, EV_READABLE);
       if(!fi){
 	D("create file item error");
       }
@@ -129,77 +129,6 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
     }
 
     else{ break; }
-  }
-}
-
-void
-worker_recv_client(ev_t *ev,ev_file_item_t *fi)
-{
-  int iovn=0,i=0,existn=0,readn=0;
-  buffer_t *buffer,*bh = NULL;
-  void *d = NULL;
-  pxy_agent_t *agent = fi->data;
-
-  if(!agent){
-    W("fd has no agent,ev->data is NULL,close the fd");
-    close(fi->fd);
-    return;
-  }
-
-  ioctl(fi->fd,FIONREAD,&readn);
-  D("FD:#%d,data to read :%d",fi->fd,readn);
-
-  if(readn > 0) {
-    existn = agent->buf_offset % BUFFER_SIZE;
-
-    if(existn > 0){
-      iovn = 1;
-      readn -= (BUFFER_SIZE - existn);
-    }
-
-    iovn += readn / BUFFER_SIZE + (((readn % BUFFER_SIZE) > 0) ? 1 : 0);
-    struct iovec iov[iovn];
-    D("existn:%d,agent->buf_offset:%d,iovn:%d",existn,agent->buf_offset,iovn);
-
-    if(existn > 0 && agent->buffer){
-
-      bh = list_entry(&(agent->buffer->list.prev), buffer_t, list);
-      d = (void*)((char*)bh->data + existn);
-
-      iov_init(&(iov[0]), d, BUFFER_SIZE - existn);
-      readn -= BUFFER_SIZE;
-      i = 1;
-    }
-
-    for(; i < iovn ;i++){
-
-      buffer = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-
-      if(i == 0){
-	bh = buffer;
-      }
-	
-      list_append(&buffer->list,&bh->list);
-
-      iov_init(&(iov[i]), buffer->data, BUFFER_SIZE);
-      readn -= BUFFER_SIZE;
-    }
-      
-    readn = readv(fi->fd,iov,iovn);
-    D("readv returns :%d",readn);
-    if(readn > 0){
-
-      if(!agent->buffer){ agent->buffer = bh; }
-      list_append(&bh->list,&agent->buffer->list);
-
-      agent->buf_offset += readn;
-
-      /*if(pxy_agent_data_received(agent) < 0){*/
-      if(pxy_agent_echo_test(agent) < 0){
-	pxy_agent_close(agent);
-      }
-
-    }
   }
 }
 

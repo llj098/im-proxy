@@ -2,114 +2,97 @@
 
 extern pxy_worker_t *worker;
 
-int
-pxy_agent_send(pxy_agent_t *agent,int fd)
+static int 
+pxy_agent_send2(pxy_agent_t *agent,int fd)
 {
-  int iovn,p,s,i,writen,n;
+  int i = 0;
+  ssize_t n;
+  void *data;
   buffer_t *b = agent->buffer;
-
-  iovn = 1;
-  p = agent->buf_parsed;
-  s = agent->buf_sent;
-  n = p - s;
-
   
-  if(n <= 0){
-    D("nothing to send");
-    return 0;
-  }
-  
-  /*calculate the iovn */
-  while(n > BUFFER_SIZE){ iovn++; n -= BUFFER_SIZE; }
+  n = agent->buf_parsed - agent->buf_sent;
 
-  /*calcute the buffer start pos */
-  for(i=0 ; i< s / BUFFER_SIZE ; i++) { b = buffer_next(b); }
-
-
-  struct iovec iov[iovn];
-  
-  for(i=0; i<iovn; i++,b=buffer_next(b)){
-
+  while(b) {
+    
     if(i == 0){
-      int offset = s % BUFFER_SIZE;
-      iov[i].iov_base = ((char *)(b->data)) + offset;
-      iov[i].iov_len = (BUFFER_SIZE - offset) > n ? n : (BUFFER_SIZE - offset);
-      D("IOV.LEN:%d",iov[i].iov_len);
-      continue;
+      data = (void*)((char*)b->data + agent->buf_sent);
+      n    = send(fd, data, b->len-agent->buf_sent,0);
+      D("i:%d",i);
+    }
+    else{
+      data = b->data;
+      n    = send(fd, data, b->len,0);
+      D("i:%d",i);
     }
 
-    if(i == iovn){
-      iov[i].iov_base = b->data;
-      iov[i].iov_len = p % BUFFER_SIZE;
-      continue;
-    }
-    
-    iov[i].iov_base = b->data;
-    iov[i].iov_len = BUFFER_SIZE;
-  }
-  
-  writen = writev(fd,iov,iovn);
-  if(writen > 0) {
-    agent->buf_sent += writen;
-    D("data to send is :%d, iovn:%d,writen:%d", n, iovn,writen);
-  }
-  
-  if(writen > 0){
-    pxy_agent_buffer_recycle(agent,writen);
-  }
-
-  return writen;
-} 
-
-
-int
-pxy_agent_downstream(pxy_agent_t *agent)
-{
-  return pxy_agent_send(agent,agent->fd);
-}
-
-
-int 
-pxy_agent_echo_test(pxy_agent_t *agent)
-{
-  char *c;
-  int idx,n,i = 0;
-
-  n = agent->buf_offset - agent->buf_sent;
-  D("n is :%d", n);
-
-  if(n){ 
-    idx = agent->buf_sent;
-    while((i++ < n) && (c=buffer_read(agent->buffer,idx)) != NULL) {
-     
-      if(*c == 'z' && (i + 2) <= n) {
-	
-	char *c1 = buffer_read(agent->buffer,idx+1);
-	char *c2 = buffer_read(agent->buffer,idx+2);
-
-	if(*c1 == '\r' && *c2 =='\n'){
-	  agent->buf_parsed = idx+2+1;
-	  i+=2; idx+=2;
-	}
-      }
-
-      idx++;
-   }
-    
-    D("the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
-      agent->buf_offset,
-      agent->buf_sent,
-      agent->buf_parsed);
+    D("n:%d, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
       
-    if(pxy_agent_downstream(agent) < 0){
-      pxy_agent_remove(agent);
-      pxy_agent_close(agent);
+
+    if(n < 0) {
+      D("M");
+      if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
+	return 0;
+      }
+      else {
+	pxy_agent_close(agent);
+	pxy_agent_remove(agent);
+	return -1;
+      }
     }
+
+    agent->buf_sent += n;
+    pxy_agent_buffer_recycle(agent);
+    b = b->next;
+    i++;
   }
 
   return 0;
 }
 
+
+int
+pxy_agent_downstream(pxy_agent_t *agent)
+{
+  return pxy_agent_send2(agent,agent->fd);
+}
+
+int 
+agent_echo_read_test(pxy_agent_t *agent)
+{
+  char *c;
+  int i = 0;
+  buffer_t *b = agent->buffer;
+  
+  while((c = buffer_read(b,i)) != NULL) {
+
+    if(*c == 'z') {
+	
+      char *c1 = buffer_read(b,i+1);
+      char *c2 = buffer_read(b,i+2);
+
+      if(c1!=NULL && c2!=NULL && *c1 == '\r' && *c2 =='\n'){
+	agent->buf_parsed = i+2+1;
+	i+=2; 
+      }
+    }
+
+    i++;
+  }
+
+  D("the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+    agent->buf_offset,
+    agent->buf_sent,
+    agent->buf_parsed);
+      
+  if(agent->buf_parsed > agent->buf_sent &&
+     pxy_agent_downstream(agent) < 0){
+    D("down finish < 0");
+    pxy_agent_remove(agent);
+    pxy_agent_close(agent);
+  }
+    D("down finish");
+  return 0;
+}
 
 int
 pxy_agent_data_received(pxy_agent_t *agent)
@@ -166,25 +149,21 @@ pxy_agent_data_received(pxy_agent_t *agent)
   return 0;
 }
 
-
 int 
-pxy_agent_buffer_recycle(pxy_agent_t *agent,int n)
+pxy_agent_buffer_recycle(pxy_agent_t *agent)
 {
-  if(!agent)
-    return -1;
+  int rn      = 0;
+  size_t n    = agent->buf_sent;
+  buffer_t *b = agent->buffer;
 
-  int rn;
-  
-  while(n > BUFFER_SIZE){
-    list_remove(&agent->buffer->list);
-    buffer_release(agent->buffer,worker->buf_pool,worker->buf_data_pool);
-    rn += BUFFER_SIZE;
-    agent->buf_sent -= BUFFER_SIZE;
-    agent->buf_offset -= BUFFER_SIZE;
-    agent->buf_parsed -= BUFFER_SIZE;
+  while(b!=NULL && n>b->len) {
+    agent->buffer = b->next;
+    buffer_release(b,worker->buf_pool,worker->buf_data_pool);
+    b  = agent->buffer;
+    n  -= b->len;
+    rn += b->len;
   }
-
-  
+ 
   return rn;
 }
 
@@ -200,17 +179,14 @@ pxy_agent_close(pxy_agent_t *agent)
     shutdown(agent->fd,SHUT_RDWR);
   }
 
-  if(agent->buffer) {
-    buffer_for_each(b,agent->buffer){
-      if(b){
-	if(b->data){
-	  mp_free(worker->buf_data_pool,b->data);
-	}
-	mp_free(worker->buf_pool,b);
-      }
-    }
+  while(agent->buffer){
+    b = agent->buffer;
+    agent->buffer = b->next;
 
-    mp_free(worker->buf_pool,agent->buffer);
+    if(b->data){
+      mp_free(worker->buf_data_pool,b->data);
+    }
+    mp_free(worker->buf_pool,b);
   }
 
   mp_free(worker->agent_pool,agent);
@@ -226,7 +202,8 @@ pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)
 int
 pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 {
-  return pxy_agent_send(agent,worker->bfd);
+  D("UP");
+  return pxy_agent_send2(agent,worker->bfd);
 }
 
 
@@ -239,12 +216,12 @@ pxy_agent_new(mp_pool_t *pool,int fd,int userid)
     goto failed;
   }
 
-  agent->buffer = mp_alloc(worker->buf_pool);
+  agent->buffer = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
+  D("%p",agent->buffer->data);
   if(!agent->buffer) {
     D("no memory for buffer");
     goto failed;
   }
-  INIT_LIST_HEAD(&(agent->buffer->list));
 
   agent->fd         = fd;
   agent->user_id    = userid;
@@ -276,21 +253,26 @@ agent_recv_client(ev_t *ev,ev_file_item_t *fi)
 
   while(1) {
 
-    b = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-    if(!b) {
-      D("no buf available"); return;
+    b = agent->buffer;
+    if(b->len > 0){
+      b = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
+      if(!b) {
+	D("no buf available"); return;
+      }
+      buffer_append(b,agent->buffer);
     }
 
-    buffer_append(b,agent->buffer);
+    D("b : %p,%p", agent->buffer->data,b->data);
 
+    n = recv(fi->fd,b->data,BUFFER_SIZE,0);
 
-    n = recv(fi->fd,b,BUFFER_SIZE,0);
+    D("n :%d,errno:%d",n,errno);
 
     if(n < 0){
-      if(errno == EAGAIN || errno == EWOULDBLOCK) {
+      if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
 	break;
       }
-     else {
+      else {
 	D("read error,errno is %d",errno);
 	goto failed;
       }
@@ -298,17 +280,21 @@ agent_recv_client(ev_t *ev,ev_file_item_t *fi)
 
     if(n == 0){
       D("socket fd #%d closed by peer",fi->fd);
-	goto failed;
+      goto failed;
     }
+
+    b->len = n;
 
     if(n < BUFFER_SIZE) {
       break;
     }
   }
 
-  if(pxy_agent_echo_test(agent) < 0){
+  if(agent_echo_read_test(agent) < 0){
     pxy_agent_close(agent);
   }
+
+  return;
 
  failed:
   if(b) {
