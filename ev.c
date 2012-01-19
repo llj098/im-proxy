@@ -28,7 +28,7 @@ ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item)
 {
   struct epoll_event epev;
 
-  epev.events = item->events | EPOLLET;
+  epev.events = item->events;
   epev.data.fd = item->fd;
   epev.data.ptr = item;
   

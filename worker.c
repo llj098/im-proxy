@@ -57,6 +57,7 @@ worker_start()
 
   fi = ev_file_item_new(fd, worker, worker_accept, NULL, EV_READABLE);
   if(!fi){
+    D("create ev for listen fd error");
     goto start_failed;
   }
   ev_file_item_ctl(worker->ev,EV_CTL_ADD,fi);
@@ -120,7 +121,7 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
 	D("create new agent error"); return;
       }
 
-      fi = ev_file_item_new(f, agent, agent_recv_client, NULL, EV_READABLE);
+      fi = ev_file_item_new(f, agent, agent_recv_client, NULL, EV_READABLE | EPOLLET);
       if(!fi){
 	D("create file item error");
       }

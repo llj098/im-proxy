@@ -183,7 +183,7 @@ main(int len,char** args)
 					   worker,
 					   worker_recv_cmd,
 					   NULL,
-					   EV_READABLE);
+					   EV_READABLE | EPOLLET);
       if(!f){ 
 	D("new file item error"); return -1; 
       }

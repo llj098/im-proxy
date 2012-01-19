@@ -28,7 +28,7 @@ agent_send2(pxy_agent_t *agent,int fd)
     D("n:%d, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
       
     if(n < 0) {
-      if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
+      if(errno == EAGAIN || errno == EWOULDBLOCK) {
 	return 0;
       }
       else {
