@@ -3,7 +3,7 @@
 extern pxy_worker_t *worker;
 
 static int 
-pxy_agent_send2(pxy_agent_t *agent,int fd)
+agent_send2(pxy_agent_t *agent,int fd)
 {
   int i = 0;
   ssize_t n;
@@ -28,7 +28,6 @@ pxy_agent_send2(pxy_agent_t *agent,int fd)
     D("n:%d, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
       
     if(n < 0) {
-      D("M");
       if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
 	return 0;
       }
@@ -42,15 +41,13 @@ pxy_agent_send2(pxy_agent_t *agent,int fd)
   }
 
   pxy_agent_buffer_recycle(agent);
-
   return 0;
 }
-
 
 int
 pxy_agent_downstream(pxy_agent_t *agent)
 {
-  return pxy_agent_send2(agent,agent->fd);
+  return agent_send2(agent,agent->fd);
 }
 
 int 
@@ -228,20 +225,11 @@ agent_get_buf_for_read(pxy_agent_t *agent)
   return b;
 }
 
-int 
-pxy_agent_prepare_buf(pxy_agent_t *agent,struct iovec *iov,int iovn)
-{
-  return -1;
-}
-
-
 int
 pxy_agent_upstream(int cmd,pxy_agent_t *agent)
 {
-  D("UP");
-  return pxy_agent_send2(agent,worker->bfd);
+  return agent_send2(agent,worker->bfd);
 }
-
 
 pxy_agent_t *
 pxy_agent_new(mp_pool_t *pool,int fd,int userid)

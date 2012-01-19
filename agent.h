@@ -27,7 +27,6 @@ int pxy_agent_data_received(pxy_agent_t *);
 int pxy_agent_upstream(int ,pxy_agent_t *);
 int pxy_agent_echo_test(pxy_agent_t *);
 int pxy_agent_buffer_recycle(pxy_agent_t *);
-int pxy_prepare_buffer(pxy_agent_t*,int,int*);
 buffer_t* agent_get_buf_for_read(pxy_agent_t*);
 
 void agent_recv_client(ev_t *,ev_file_item_t*);
