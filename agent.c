@@ -41,10 +41,11 @@ pxy_agent_send2(pxy_agent_t *agent,int fd)
     }
 
     agent->buf_sent += n;
-    pxy_agent_buffer_recycle(agent);
     b = b->next;
     i++;
   }
+
+  pxy_agent_buffer_recycle(agent);
 
   return 0;
 }
@@ -90,7 +91,6 @@ agent_echo_read_test(pxy_agent_t *agent)
     pxy_agent_remove(agent);
     pxy_agent_close(agent);
   }
-    D("down finish");
   return 0;
 }
 
@@ -154,16 +154,35 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent)
 {
   int rn      = 0;
   size_t n    = agent->buf_sent;
-  buffer_t *b = agent->buffer;
+  buffer_t *b = agent->buffer,*t;
 
-  while(b!=NULL && n>b->len) {
-    agent->buffer = b->next;
-    buffer_release(b,worker->buf_pool,worker->buf_data_pool);
-    b  = agent->buffer;
+  if(b){
+    D("before recycle:the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+      agent->buf_offset,
+      agent->buf_sent,
+      agent->buf_parsed);
+  }
+
+  while(b!=NULL && n >= b->len) {
     n  -= b->len;
     rn += b->len;
+
+    t = b->next;
+    buffer_release(b,worker->buf_pool,worker->buf_data_pool);
+    b = t;
+
+    D("b:%p,n:%d",b,n);
   }
- 
+
+  agent->buffer     = b;
+  agent->buf_sent   -= rn;
+  agent->buf_parsed -= rn;
+
+  D("after recycle:the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+    agent->buf_offset,
+    agent->buf_sent,
+    agent->buf_parsed);
+   
   return rn;
 }
 
@@ -175,8 +194,8 @@ pxy_agent_close(pxy_agent_t *agent)
 
   if(agent->fd > 0){
     /* close(agent->fd); */
-    D("shutdown the socket");
-    shutdown(agent->fd,SHUT_RDWR);
+    D("close the socket");
+    close(agent->fd);
   }
 
   while(agent->buffer){
@@ -190,6 +209,27 @@ pxy_agent_close(pxy_agent_t *agent)
   }
 
   mp_free(worker->agent_pool,agent);
+  D("pxy_agent_close finished");
+}
+
+buffer_t* 
+agent_get_buf_for_read(pxy_agent_t *agent)
+{
+  buffer_t *b = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
+
+  if(b == NULL) {
+    D("no buf available"); 
+    return NULL;
+  }
+
+  if(agent->buffer == NULL) {
+    agent->buffer = b;
+  }
+  else {
+    buffer_append(b,agent->buffer);
+  }
+
+  return b;
 }
 
 int 
@@ -213,13 +253,6 @@ pxy_agent_new(mp_pool_t *pool,int fd,int userid)
   pxy_agent_t *agent = mp_alloc(pool);
   if(!agent){
     D("no mempry for agent"); 
-    goto failed;
-  }
-
-  agent->buffer = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-  D("%p",agent->buffer->data);
-  if(!agent->buffer) {
-    D("no memory for buffer");
     goto failed;
   }
 
@@ -253,23 +286,18 @@ agent_recv_client(ev_t *ev,ev_file_item_t *fi)
 
   while(1) {
 
-    b = agent->buffer;
-    if(b->len > 0){
-      b = buffer_fetch(worker->buf_pool,worker->buf_data_pool);
-      if(!b) {
-	D("no buf available"); return;
-      }
-      buffer_append(b,agent->buffer);
+    b = agent_get_buf_for_read(agent);
+
+    if(b == NULL) {
+      pxy_agent_close(agent);
+      pxy_agent_remove(agent);
     }
 
-    D("b : %p,%p", agent->buffer->data,b->data);
-
     n = recv(fi->fd,b->data,BUFFER_SIZE,0);
-
-    D("n :%d,errno:%d",n,errno);
+    D("recv %d bytes",n);
 
     if(n < 0){
-      if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
+      if(errno == EAGAIN || errno == EWOULDBLOCK) {
 	break;
       }
       else {
@@ -297,10 +325,6 @@ agent_recv_client(ev_t *ev,ev_file_item_t *fi)
   return;
 
  failed:
-  if(b) {
-    buffer_release(b,worker->buf_pool,worker->buf_data_pool);
-  }
-
   pxy_agent_close(agent);
   pxy_agent_remove(agent);
   return;

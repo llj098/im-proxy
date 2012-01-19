@@ -89,6 +89,7 @@ worker_close()
     pxy_agent_close(a);
   }
 
+  close(master->listen_fd);
   return 0;
 }
 
