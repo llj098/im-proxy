@@ -7,27 +7,26 @@ pxy_agent_send2(pxy_agent_t *agent,int fd)
 {
   int i = 0;
   ssize_t n;
+  size_t len;
   void *data;
   buffer_t *b = agent->buffer;
   
   n = agent->buf_parsed - agent->buf_sent;
 
-  while(b) {
+  for(; b != NULL; agent->buf_sent += n, b = b->next, i++){
     
     if(i == 0){
       data = (void*)((char*)b->data + agent->buf_sent);
-      n    = send(fd, data, b->len-agent->buf_sent,0);
-      D("i:%d",i);
+      len  = b->len - agent->buf_sent;
     }
     else{
       data = b->data;
-      n    = send(fd, data, b->len,0);
-      D("i:%d",i);
+      len  = b->len;
     }
 
+    n = send(fd,data,len,0);
     D("n:%d, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
       
-
     if(n < 0) {
       D("M");
       if(errno == -EAGAIN || errno == -EWOULDBLOCK) {
@@ -40,9 +39,6 @@ pxy_agent_send2(pxy_agent_t *agent,int fd)
       }
     }
 
-    agent->buf_sent += n;
-    b = b->next;
-    i++;
   }
 
   pxy_agent_buffer_recycle(agent);
@@ -289,6 +285,7 @@ agent_recv_client(ev_t *ev,ev_file_item_t *fi)
     b = agent_get_buf_for_read(agent);
 
     if(b == NULL) {
+      D("no buf for read");
       pxy_agent_close(agent);
       pxy_agent_remove(agent);
     }
