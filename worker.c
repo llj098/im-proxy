@@ -60,7 +60,7 @@ worker_start()
     D("create ev for listen fd error");
     goto start_failed;
   }
-  ev_file_item_ctl(worker->ev,EV_CTL_ADD,fi);
+  ev_add_file_item(worker->ev,fi);
 
   /* TODO: Backend todo
      worker->bfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
@@ -125,7 +125,7 @@ worker_accept(ev_t *ev, ev_file_item_t *ffi)
       if(!fi){
 	D("create file item error");
       }
-      ev_file_item_ctl(worker->ev,EV_CTL_ADD,fi);
+      ev_add_file_item(worker->ev,fi);
 
       pxy_agent_append(agent,worker->agents);
     }

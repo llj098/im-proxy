@@ -187,7 +187,7 @@ main(int len,char** args)
       if(!f){ 
 	D("new file item error"); return -1; 
       }
-      if(ev_file_item_ctl(worker->ev,EV_CTL_ADD,f) < 0) {
+      if(ev_add_file_item(worker->ev,f) < 0) {
 	D("add event error"); return -1;
       }
 

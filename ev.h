@@ -82,8 +82,9 @@ typedef struct ev_s{
   })
 
 ev_t* ev_create();
-int ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item);
 int ev_time_item_ctl(ev_t* ev,int op,ev_time_item_t* item);
+int ev_add_file_item(ev_t*,ev_file_item_t*);
+int ev_del_file_item(ev_t*,int);
 void ev_main(ev_t* ev);
 
 #endif

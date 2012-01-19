@@ -24,7 +24,7 @@ ev_create(void* data)
 }
 
 int 
-ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item)
+ev_add_file_item(ev_t* ev,ev_file_item_t* item)
 {
   struct epoll_event epev;
 
@@ -32,8 +32,14 @@ ev_file_item_ctl(ev_t* ev,int op,ev_file_item_t* item)
   epev.data.fd = item->fd;
   epev.data.ptr = item;
   
-  int i = epoll_ctl(ev->fd, op, item->fd, &epev);
+  int i = epoll_ctl(ev->fd,EV_CTL_ADD,item->fd, &epev);
   return i;
+}
+
+int 
+ev_del_file_item(ev_t *ev,int fd)
+{
+  return epoll_ctl(ev->fd,EV_CTL_DEL,fd,NULL);
 }
 
 int 

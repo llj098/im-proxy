@@ -187,6 +187,9 @@ pxy_agent_close(pxy_agent_t *agent)
 
   if(agent->fd > 0){
     /* close(agent->fd); */
+    if(ev_del_file_item(worker->ev,agent->fd) < 0){
+      D("del file item err, errno is %d",errno);
+    }
     D("close the socket");
     close(agent->fd);
   }
