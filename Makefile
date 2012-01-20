@@ -8,7 +8,8 @@ LINK =	$(CC)
 LIB_OBJS = \
 	./ev.o \
 	./mempool.o \
-	./hashtable.o
+	./hashtable.o \
+	./rbtree.o
 
 PXY_OBJS = \
 	./worker.o \
