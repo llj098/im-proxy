@@ -10,30 +10,30 @@
 #define FREE(x) free((x))
 
 typedef struct mp_pool_s{
-  void** freelist;
-  size_t max;
-  size_t size; /*item size*/
-  size_t used;
-  size_t allocated;
-  char name[12];
+    void** freelist;
+    size_t max;
+    size_t size; /*item size*/
+    size_t used;
+    size_t allocated;
+    char name[12];
 }mp_pool_t;
 
 struct mp_pool_list_s{
-  mp_pool_t *next;
-  mp_pool_t *prev;
+    mp_pool_t *next;
+    mp_pool_t *prev;
 };
 
 
 #define mp_pool_list_init(__pool)		\
-  ({						\
-    struct mp_pool_s* __list;			\
-    __list = malloc(sizeof(*__list));		\
-    if(__list){					\
-      __list->next = __pool;			\
-      __list->prev = __pool;			\
-    }						\
-    __list;					\
-  })					
+    ({						\
+	struct mp_pool_s* __list;		\
+	__list = malloc(sizeof(*__list));	\
+	if(__list){				\
+	    __list->next = __pool;		\
+	    __list->prev = __pool;		\
+	}					\
+	__list;					\
+    })					
 
 mp_pool_t* mp_create(int size,int max,char* name);
 void mp_destroy(mp_pool_t *pool);
