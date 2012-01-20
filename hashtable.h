@@ -8,24 +8,24 @@ typedef void ht_clean(void* d);
 
 
 typedef struct ht_key_s{
-  uint32_t hash;
-  uint32_t key;
+    uint32_t hash;
+    uint32_t key;
 }ht_key_t;
 
 typedef struct ht_node_s{
-  ht_key_t key;
-  void* data;
-  list_head_t list;
-  struct ht_node_s* next;
-  int used;
+    ht_key_t key;
+    void* data;
+    list_head_t list;
+    struct ht_node_s* next;
+    int used;
 }ht_node_t;
 
 typedef struct ht_table_s{ 
-  int alloced;
-  int used;
-  int len;
-  ht_node_t **nodes;
-  mp_pool_t* pool;
+    int alloced;
+    int used;
+    int len;
+    ht_node_t **nodes;
+    mp_pool_t* pool;
 }ht_table_t;
 
 int ht_resize(ht_table_t* t);
@@ -36,74 +36,74 @@ void ht_remove(ht_table_t* t,uint32_t k,ht_clean clean);
 
 
 #define ht_node_from(__src,__dst)		\
-  ({						\
-    (__dst)->data = (__src)->data;		\
-    (__dst)->key.hash = (__src)->key.hash;	\
-    (__dst)->key.key = (__src)->key.key;	\
-  })
+    ({						\
+	(__dst)->data = (__src)->data;		\
+	(__dst)->key.hash = (__src)->key.hash;	\
+	(__dst)->key.key = (__src)->key.key;	\
+    })
 
 #define ht_key_init(__key,__len)		\
-  ({						\
-    ht_key_t __k;				\
-    __k.key = __key;				\
-    __k.len = __len;				\
-    __k;					\
-  })
+    ({						\
+	ht_key_t __k;				\
+	__k.key = __key;			\
+	__k.len = __len;			\
+	__k;					\
+    })
 
 
 static inline void 
 ht_node_init(ht_node_t *node,uint32_t hash,uint32_t key,void *d)
 {
-  node->key.key = key;
-  node->key.hash = hash;
-  node->data = d;
-  node->used = 0;
-  INIT_LIST_HEAD(&(node->list));
+    node->key.key = key;
+    node->key.hash = hash;
+    node->data = d;
+    node->used = 0;
+    INIT_LIST_HEAD(&(node->list));
 }
 
 static inline void 
 ht_renew(ht_table_t *t,ht_node_t **nodes,uint32_t len,int used)
 {
-  t->nodes = nodes;
-  t->len = len;
-  t->used = used;
+    t->nodes = nodes;
+    t->len = len;
+    t->used = used;
 }
 
 
 static inline ht_table_t* 
 ht_create()
 {
-  int i;
-  ht_table_t *t = malloc(sizeof(*t));
-  if(!t)
-    goto failed;
+    int i;
+    ht_table_t *t = malloc(sizeof(*t));
+    if(!t)
+	goto failed;
 
-  t->len = HT_INIT_SIZE;
-  t->nodes = pxy_calloc(sizeof(ht_node_t)*HT_INIT_SIZE);
-  if(!t->nodes) 
-    goto failed;
+    t->len = HT_INIT_SIZE;
+    t->nodes = pxy_calloc(sizeof(ht_node_t)*HT_INIT_SIZE);
+    if(!t->nodes) 
+	goto failed;
 
-  for (i=0; i< HT_INIT_SIZE; ++i) {
-    ht_node_t *node = (ht_node_t*)(t->nodes) + i;
-    ht_node_init(node,0,0,NULL);
-  }
+    for (i=0; i< HT_INIT_SIZE; ++i) {
+	ht_node_t *node = (ht_node_t*)(t->nodes) + i;
+	ht_node_init(node,0,0,NULL);
+    }
   
-  return t;
+    return t;
 
- failed:
-  if(t)
-    FREE(t);
+failed:
+    if(t)
+	FREE(t);
 
-  return NULL;
+    return NULL;
 }
 
 /*This algorith comes from google's snappy*/
 static inline uint32_t 
 ht_hash_func(uint32_t bytes) 
 {
-  int shift = 5;
-  uint32_t kMul = 0x1e35a7bd;
-  return (bytes * kMul) >> shift;
+    int shift = 5;
+    uint32_t kMul = 0x1e35a7bd;
+    return (bytes * kMul) >> shift;
 }
 
 

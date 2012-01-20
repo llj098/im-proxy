@@ -40,7 +40,7 @@ void mp_destroy(mp_pool_t *pool);
 void* mp_alloc(mp_pool_t* p);
 void* mp_calloc(mp_pool_t* p);
 void mp_free(mp_pool_t* p,void* d);
-
+void mp_dump(mp_pool_t*);
 
 
 void* pxy_calloc(size_t size);
