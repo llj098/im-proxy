@@ -85,11 +85,11 @@ int
 worker_close()
 {
     pxy_agent_t *a;
-    worker->ev->stop = 1;
     pxy_agent_for_each(a,worker->agents){
 	pxy_agent_close(a);
     }
 
+    worker->ev->stop = 1;
     close(master->listen_fd);
     return 0;
 }
