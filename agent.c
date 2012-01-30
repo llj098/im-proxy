@@ -25,7 +25,7 @@ agent_send2(pxy_agent_t *agent,int fd)
 	}
 
 	n = send(fd,data,len,0);
-	D("n:%d, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
+	D("n:%zu, fd #%d, errno :%d, EAGAIN:%d", n,fd,errno,EAGAIN);
       
 	if(n < 0) {
 	    if(errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -73,7 +73,7 @@ agent_echo_read_test(pxy_agent_t *agent)
 	i++;
     }
 
-    D("the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+    D("the agent->offset:%zu,agent->sent:%zu,agent->parsed:%zu",
       agent->buf_offset,
       agent->buf_sent,
       agent->buf_parsed);
@@ -150,7 +150,7 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent)
     buffer_t *b = agent->buffer,*t;
 
     if(b){
-	D("before recycle:the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+	D("before recycle:the agent->offset:%zu,agent->sent:%zu,agent->parsed:%zu",
 	  agent->buf_offset,
 	  agent->buf_sent,
 	  agent->buf_parsed);
@@ -164,14 +164,14 @@ pxy_agent_buffer_recycle(pxy_agent_t *agent)
 	buffer_release(b,worker->buf_pool,worker->buf_data_pool);
 	b = t;
 
-	D("b:%p,n:%d",b,n);
+	D("b:%p,n:%zu",b,n);
     }
 
     agent->buffer     = b;
     agent->buf_sent   -= rn;
     agent->buf_parsed -= rn;
 
-    D("after recycle:the agent->offset:%d,agent->sent:%d,agent->parsed:%d",
+    D("after recycle:the agent->offset:%zu,agent->sent:%zu,agent->parsed:%zu",
       agent->buf_offset,
       agent->buf_sent,
       agent->buf_parsed);
